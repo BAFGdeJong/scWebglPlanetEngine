@@ -3,6 +3,7 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "compile": "tsc"
+    "compile": "tsc",
+    "build": "tsc && terser bin/bundle.js -o bin/bundle.min.js --compress --mangle"
   }
 }
