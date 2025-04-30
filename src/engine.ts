@@ -1,7 +1,7 @@
 'use strict';
 
 import * as utils from './utils.ts';
-import { compileShader, importShader } from './shaders.ts';
+import { importShader } from './shaders.ts';
 
 class Color {
     r: number;
@@ -122,13 +122,11 @@ function planetEngine({
 
     // Bind and setup lighting
 
-    function createProgram(gl: WebGL2RenderingContext, vertexShader: string, fragmentShader: string) {
-        let vertex_Shader = compileShader(gl, vertexShader, gl.VERTEX_SHADER);
-        let fragment_Shader = compileShader(gl, fragmentShader, gl.FRAGMENT_SHADER);
+    function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
 
         let program = gl.createProgram();
-        gl.attachShader(program, vertex_Shader);
-        gl.attachShader(program, fragment_Shader);
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
 
         gl.linkProgram(program);
 
@@ -140,7 +138,7 @@ function planetEngine({
     }
 
     function planetProgram(gl: WebGL2RenderingContext) {
-        let program = createProgram(gl, importShader('planet.vert'), importShader('planet.frag'));
+        let program = createProgram(gl, importShader(gl, 'planet.vert'), importShader(gl, 'planet.frag'));
         gl.useProgram(program);
 
         // Create sphere geometry
@@ -218,7 +216,7 @@ function planetEngine({
     }
 
     function atmosphereProgram(gl: any, current_program: any) {
-        let program = createProgram(gl, importShader('atmosphere.vert'), importShader('atmosphere.frag'));
+        let program = createProgram(gl, importShader(gl, 'atmosphere.vert'), importShader(gl, 'atmosphere.frag'));
         gl.useProgram(program);
 
         let atmosphereRadius = 1.05; // Slightly larger than the planet
@@ -274,8 +272,8 @@ function planetEngine({
         gl.bindBuffer(gl.ARRAY_BUFFER, bgVBO);
         gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
 
-        const bgVertexShader = compileShader(gl, importShader('background.vert'), gl.VERTEX_SHADER);
-        const bgFragmentShader = compileShader(gl, importShader('background.frag'), gl.FRAGMENT_SHADER);
+        const bgVertexShader = importShader(gl, 'background.vert');
+        const bgFragmentShader = importShader(gl, 'background.frag');
         const bgProgram = gl.createProgram();
         gl.attachShader(bgProgram, bgVertexShader);
         gl.attachShader(bgProgram, bgFragmentShader);
