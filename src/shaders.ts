@@ -11,6 +11,15 @@ for (const path in shaderFiles) {
 
 }
 
+// Should be moved to utils
+/**
+* 
+* Gets the file extension from a filename.
+*
+* @param {string} filename - Name of the file to import.
+* @returns {string} The file extension.
+* 
+*/
 function getFileExtension(filename: string): string {
 
     const match = filename.match(/\.([a-zA-Z0-9]+)$/);
@@ -18,6 +27,16 @@ function getFileExtension(filename: string): string {
 
 }
 
+/**
+* 
+* Gets the shader type from the file extension.
+*
+* @param {WebGLRenderingContext} gl - The WebGL context.
+* @param {WebGLRenderingContext} ext - The file extension.
+* @returns {number} The shader type.
+* @throws {Error} If unknown shader type.
+* 
+*/
 function getShaderType(gl: WebGLRenderingContext, ext: string): number {
 
     switch (ext) {
@@ -35,8 +54,8 @@ function getShaderType(gl: WebGLRenderingContext, ext: string): number {
 *
 * @param {WebGL2RenderingContext} gl - The WebGL context.
 * @param {number} name - Name of the file to import.
-* @returns {WebGLShader} - The compiled shader.
-* @throws {Error} - If the shader is not found.
+* @returns {WebGLShader} The compiled shader.
+* @throws {Error} If the shader is not found.
 * 
 */
 export function importShader(gl: WebGL2RenderingContext, name: string): WebGLShader {

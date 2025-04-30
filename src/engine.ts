@@ -475,7 +475,7 @@ planetEngine({
 
     // Planet clouds information
     cloudColor: new Color(235,240,250,225),
-    cloudRotation: 5.0,
+    cloudRotation: 10.0,
 
     // Lighting information
     lightPosition: [0,1.0,0],
