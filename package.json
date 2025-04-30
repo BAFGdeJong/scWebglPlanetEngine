@@ -1,9 +1,11 @@
 {
   "devDependencies": {
+    "esbuild": "^0.25.3",
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "compile": "tsc",
-    "build": "tsc && terser bin/bundle.js -o bin/bundle.min.js --compress --mangle"
+    "check": "tsc --noEmit",
+    "build": "esbuild src/engine.ts --bundle --platform=browser --outfile=bin/bundle.js && terser bin/bundle.js -o bin/bundle.min.js --compress --mangle",
+    "dev": "npm run check && npm run build"
   }
 }
