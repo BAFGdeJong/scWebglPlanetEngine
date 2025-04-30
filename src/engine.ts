@@ -23,6 +23,37 @@ THE SOFTWARE. */
 // Some mathematical functions are derived from the JavaScript library glMatrix.
 // For copyright details, please refer to the above license notice.
 // The library can be found at: https://github.com/toji/gl-matrix
+
+class Color {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+    constructor(r: number, g: number, b:number, a:number=0.0) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    get_normalized_rgba() {
+        return [this.r / 255, this.g / 255, this.b / 255, this.a / 255];
+    }
+
+    get_rgba() {
+        return [this.r, this.g, this.b, this.a];
+    }
+
+    get_normalized_rgb() {
+        return [this.r / 255, this.g / 255, this.b / 255];
+    }
+
+    get_rgb() {
+        return [this.r, this.g, this.b];
+    }
+
+}
+
 function planetEngine({
     texturePlanetUrl = 'null',
     texturePlanetIsCompressed = false,
@@ -75,16 +106,16 @@ function planetEngine({
     const rads = Math.PI / 180
     let ARRAY_TYPE = typeof Float32Array !== "undefined" ? Float32Array : Array;
 
-    function setMatrixArrayType(type) {
+    function setMatrixArrayType(type: any) {
         ARRAY_TYPE = type;
     }
 
-    function equals(a, b) {
+    function equals(a: any, b: any) {
         return Math.abs(a - b) <= EPSILON * Math.max(1.0, Math.abs(a), Math.abs(b));
     }
 
-    function radians(degrees) {
-        return degrees * Math.PI / 180;
+    function radians(degrees: any) {
+        return degrees * rads;
     }
 
     function createMat4() {
@@ -110,7 +141,27 @@ function planetEngine({
         return out;
     }
 
-    function multiply(out, a, b) {
+    function identity(out: number[]) {
+        out[0] = 1;
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = 0;
+        out[5] = 1;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 0;
+        out[9] = 0;
+        out[10] = 1;
+        out[11] = 0;
+        out[12] = 0;
+        out[13] = 0;
+        out[14] = 0;
+        out[15] = 1;
+        return out;
+    }
+
+    function multiply(out: any, a: any, b: any) {
 
         let a00 = a[0],
       
@@ -214,7 +265,7 @@ function planetEngine({
       
       }
 
-    function rotate(out, a, rad, axis) {
+    function rotate(out: any, a: any, rad: any, axis: any) {
         let x = axis[0],
             y = axis[1],
             z = axis[2];
@@ -288,7 +339,7 @@ function planetEngine({
         return out;
     }
 
-    function rotateZ(out, a, rad) {
+    function rotateZ(out: any, a: any, rad: any) {
         let s = Math.sin(rad);
         let c = Math.cos(rad);
         let a00 = a[0];
@@ -324,7 +375,7 @@ function planetEngine({
         return out;
     }
 
-    function scale(out, a, v) {
+    function scale(out: any, a: any, v: any) {
         let x = v[0],
         y = v[1],
         z = v[2];
@@ -348,7 +399,7 @@ function planetEngine({
         return out;
     }
 
-    function lookAt(out, eye, center, up) {
+    function lookAt(out: any, eye: any, center: any, up: any) {
         let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
         let eyex = eye[0];
         let eyey = eye[1];
@@ -428,7 +479,7 @@ function planetEngine({
         return out;
     }
 
-    function ortho(out, left, right, bottom, top, near, far) {
+    function ortho(out: any, left: any, right: any, bottom: any, top: any, near: any, far: any) {
         const lr = 1 / (left - right);
         const bt = 1 / (bottom - top);
         const nf = 1 / (near - far);
@@ -451,7 +502,7 @@ function planetEngine({
         return out;
     }
 
-    function perspective(out, fovy, aspect, near, far) {
+    function perspective(out: any, fovy: any, aspect: any, near: any, far: any) {
         const f = 1.0 / Math.tan(fovy / 2);
         out[0] = f / aspect;
         out[1] = 0;
@@ -478,7 +529,7 @@ function planetEngine({
         return out;
     }
 
-    function perspectiveFromFieldOfView(out, fov, near, far) {
+    function perspectiveFromFieldOfView(out: any, fov: any, near: any, far: any) {
         let upTan = Math.tan((fov.upDegrees * Math.PI) / 180.0);
         let downTan = Math.tan((fov.downDegrees * Math.PI) / 180.0);
         let leftTan = Math.tan((fov.leftDegrees * Math.PI) / 180.0);
@@ -505,7 +556,7 @@ function planetEngine({
         return out;
     }
 
-    function translate(out, a, v) {
+    function translate(out: any, a: any, v: any) {
         let x = v[0],
         y = v[1],
         z = v[2];
@@ -554,7 +605,7 @@ function planetEngine({
         return out;
     }
 
-    function rotateY(out, a, rad) {
+    function rotateY(out: any, a: any, rad: any) {
         let s = Math.sin(rad);
         let c = Math.cos(rad);
         let a00 = a[0];
@@ -590,7 +641,7 @@ function planetEngine({
         return out;
     }
 
-    function rotateX(out, a, rad) {
+    function rotateX(out: any, a: any, rad: any) {
         let s = Math.sin(rad);
         let c = Math.cos(rad);
         let a10 = a[4];
@@ -627,7 +678,7 @@ function planetEngine({
     }
 
     // Create sphere geometry
-    function createSphere(subdivisions, radius) {
+    function createSphere(subdivisions: number, radius: number) {
         const positions = [];
         const normals = [];
         const texCoords = [];
@@ -687,7 +738,7 @@ function planetEngine({
         };
     }
 
-    function createRing(innerRadius, outerRadius, segments) {
+    function createRing(innerRadius: number, outerRadius: number, segments: number) {
         const vertices = [];
         const texCoords = [];
         const indices = [];
@@ -727,7 +778,7 @@ function planetEngine({
       }
 
     // Load texture
-    function loadTexture(gl, glProgram, uniformName, url, textureId) {
+    function loadTexture(gl: WebGL2RenderingContext, glProgram: any, uniformName: string, url: string, textureId: number) {
         let texture = gl.createTexture();
         let image = new Image();
 
@@ -754,7 +805,7 @@ function planetEngine({
         return {id: textureId, location, texture};
     }
 
-    function assignTexture(gl, id, location) {
+    function assignTexture(gl: WebGL2RenderingContext, id: number, location: WebGLUniformLocation) {
         gl.uniform1i(location, id);
     }
 
@@ -768,6 +819,8 @@ function planetEngine({
     if (!gl) {
         console.error('WebGL2 not supported');
     }
+
+    gl = gl!
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -942,15 +995,19 @@ function planetEngine({
     }`;
 
     // Compile shaders
-    function compileShader(gl, source, type) {
+    function compileShader(gl: WebGL2RenderingContext, source: string, type: GLenum) {
         let shader = gl.createShader(type);
+        if (!shader) throw new Error(`Unable to create shader, ${source} failed.`);
+
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
+
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
-            gl.deleteShader(shader);
-            return null;
+            // console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+            // gl.deleteShader(shader);
+            throw new Error(`Unable to create shader, ${source} failed. ` + gl.getShaderInfoLog(shader));
         }
+
         return shader;
     }
 
@@ -980,7 +1037,7 @@ function planetEngine({
 
     // Bind and setup lighting
 
-    function createProgram(gl, vertexShader, fragmentShader) {
+    function createProgram(gl: WebGL2RenderingContext, vertexShader: string, fragmentShader: string) {
         let vertex_Shader = compileShader(gl, vertexShader, gl.VERTEX_SHADER);
         let fragment_Shader = compileShader(gl, fragmentShader, gl.FRAGMENT_SHADER);
 
@@ -997,7 +1054,7 @@ function planetEngine({
         return program;
     }
 
-    function planetProgram(gl, vertexShader, fragmentShader) {
+    function planetProgram(gl: WebGL2RenderingContext, vertexShader: string, fragmentShader: string) {
         let program = createProgram(gl, vertexShader, fragmentShader);
         gl.useProgram(program);
 
@@ -1031,12 +1088,12 @@ function planetEngine({
         gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
         let texture = loadTexture(gl, program, 'uTexture', texturePlanetUrl, 0);
-        assignTexture(gl, texture.id, texture.location);
+        assignTexture(gl, texture.id, texture.location!); // TODO error handling
         let planetColorLocation = gl.getUniformLocation(program, 'uPlanetColor');
         gl.uniform4fv(planetColorLocation, planetColor.get_normalized_rgba());
 
         let textureCloud = loadTexture(gl, program, 'uTextureCloud', textureCloudUrl, 1);
-        assignTexture(gl, textureCloud.id, textureCloud.location);
+        assignTexture(gl, textureCloud.id, textureCloud.location!); // TODO error handling
         let cloudRotationLocation = gl.getUniformLocation(program, 'uCloudRotation');
         gl.uniform1f(cloudRotationLocation, cloudRotation * Math.PI / 180);
         let cloudColorLocation = gl.getUniformLocation(program, 'uCloudColor');
@@ -1075,7 +1132,7 @@ function planetEngine({
 
     }
 
-    function atmosphereProgram(gl, current_program, vertexShader, fragmentShader) {
+    function atmosphereProgram(gl: any, current_program: any, vertexShader: any, fragmentShader: any) {
         let program = createProgram(gl, vertexShader, fragmentShader);
         gl.useProgram(program);
 
@@ -1119,7 +1176,7 @@ function planetEngine({
         };
     }
 
-    function backgroundProgram(gl, current_program, fragmentShaderSource, vertexShaderSource) {
+    function backgroundProgram(gl: any, current_program: any, fragmentShaderSource: any, vertexShaderSource: any) {
         const quadVertices = new Float32Array([
             // x, y,   u, v
             -1, -1,   0, 0,
@@ -1150,7 +1207,7 @@ function planetEngine({
         let aBackTexCoordLocation = gl.getAttribLocation(bgProgram, "aTexCoord");
 
         let backgroundTexture = loadTexture(gl, bgProgram, 'uTexture', textureBackgroundUrl, 14);
-        assignTexture(gl, backgroundTexture.id, backgroundTexture.location);
+        assignTexture(gl, backgroundTexture.id, backgroundTexture.location!); // TODO error handling
 
         gl.useProgram(current_program);
 
@@ -1167,37 +1224,37 @@ function planetEngine({
     // let atmosphereProg = atmosphereProgram(gl, program.program, atmosphereFragmentShaderSource, atmosphereVertexShaderSource);
     let bgProgram = backgroundProgram(gl, program.program, backgroundFragmentShaderSource, backgroundVertexShaderSource);
 
-    function drawBackground(current_program, bgProg) {
-        gl.disable(gl.DEPTH_TEST);
-        gl.disable(gl.BLEND)
-        gl.depthMask(false);
+    // function drawBackground(gl, current_program, bgProg) {
+    //     gl.disable(gl.DEPTH_TEST);
+    //     gl.disable(gl.BLEND)
+    //     gl.depthMask(false);
 
-        gl.useProgram(bgProg.program);
+    //     gl.useProgram(bgProg.program);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.bgVertexBuffer);
-        gl.vertexAttribPointer(bgProg.aPositionLocation, 2, gl.FLOAT, false, 16, 0);
-        gl.enableVertexAttribArray(bgProg.aPositionLocation);
-        gl.vertexAttribPointer(bgProg.aTexCoordLocation, 2, gl.FLOAT, false, 16, 8);
-        gl.enableVertexAttribArray(bgProg.aTexCoordLocation);
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.bgVertexBuffer);
+    //     gl.vertexAttribPointer(bgProg.aPositionLocation, 2, gl.FLOAT, false, 16, 0);
+    //     gl.enableVertexAttribArray(bgProg.aPositionLocation);
+    //     gl.vertexAttribPointer(bgProg.aTexCoordLocation, 2, gl.FLOAT, false, 16, 8);
+    //     gl.enableVertexAttribArray(bgProg.aTexCoordLocation);
 
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    //     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-        gl.useProgram(current_program);
-        gl.enable(gl.DEPTH_TEST);
-        gl.depthMask(true);
-        gl.enable(gl.BLEND);
+    //     gl.useProgram(current_program);
+    //     gl.enable(gl.DEPTH_TEST);
+    //     gl.depthMask(true);
+    //     gl.enable(gl.BLEND);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(positionAttributeLocation);
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    //     gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+    //     gl.enableVertexAttribArray(positionAttributeLocation);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(texCoordAttributeLocation);
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    //     gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    //     gl.enableVertexAttribArray(texCoordAttributeLocation);
 
-    }
+    // }
 
-    function clearCanvas(gl) {
+    function clearCanvas(gl: WebGL2RenderingContext) {
         // Clear the canvas and depth buffer
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1227,7 +1284,12 @@ function planetEngine({
     let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
     let fov = Math.PI * 0.25
 
-    function render() {
+    // function tick(time: number) {
+    //     render(gl, time);
+    //     requestAnimationFrame(tick);
+    // }
+
+    function render(gl: WebGL2RenderingContext) {
 
         clearCanvas(gl);
 
@@ -1297,44 +1359,18 @@ function planetEngine({
         // gl.drawElements(gl.TRIANGLES, atmosphereProg.atmosphereSphere.indices.length, gl.UNSIGNED_SHORT, 0);
 
         // Continue rendering
-        requestAnimationFrame(render);
+        requestAnimationFrame(render.bind(null, gl));
     }
-    render();
-}
-
-class Color {
-    constructor(r, g, b, a=0) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-    }
-
-    get_normalized_rgba() {
-        return [this.r / 255, this.g / 255, this.b / 255, this.a / 255];
-    }
-
-    get_rgba() {
-        return [this.r, this.g, this.b, this.a];
-    }
-
-    get_normalized_rgb() {
-        return [this.r / 255, this.g / 255, this.b / 255];
-    }
-
-    get_rgb() {
-        return [this.r, this.g, this.b];
-    }
-
+    render(gl);
 }
 
 planetEngine({
     // Planet texturing information
-    texturePlanetUrl: 'textures/arid.jpg',
+    texturePlanetUrl: '../textures/arid.jpg',
     texturePlanetIsCompressed: false,
-    textureCloudUrl: 'textures/clouds_banded01.png',
+    textureCloudUrl: '../textures/clouds_banded01.png',
     textureCloudIsCompressed: false,
-    textureBackgroundUrl: 'textures/background2.jpg',
+    textureBackgroundUrl: '../textures/background2.jpg',
     textureBackgroundIsCompressed: false,
     textureAtmosphereUrl: '',
     textureAtmosphereIsCompressed: false,
