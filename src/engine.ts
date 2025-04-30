@@ -1,30 +1,7 @@
 'use strict';
 
 import * as utils from './utils.ts';
-
-/* Copyright (c) 2015-2021, Brandon Jones, Colin MacKenzie IV.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE. */
-
-// Some mathematical functions are derived from the JavaScript library glMatrix.
-// For copyright details, please refer to the above license notice.
-// The library can be found at: https://github.com/toji/gl-matrix
+import { compileShader, importShader } from './shaders.ts';
 
 class Color {
     r: number;
@@ -120,84 +97,10 @@ function planetEngine({
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     // Vertex shader
-    let vertexShaderSource = `#version 300 es
-    #pragma vscode_glsllint_stage: vert
-    
-    in vec3 aPosition;
-    in vec2 aTexCoord;
-    in vec3 aNormal;
-    out vec3 vNormal;
-    out vec3 vPosition;
-    out vec2 vTexCoord;
-    uniform mat4 uTotalProjectionMatrix;
-    uniform vec3 uSphereTranslation;
-    uniform mat4 uModelMatrix;
-
-    void main() {
-        vNormal = aNormal;
-        
-        // Apply translation and transformation to get the world position
-        vec3 translatedPosition = aPosition + uSphereTranslation;
-        vec4 worldPosition = uModelMatrix * vec4(translatedPosition, 1.0);  // Transform to world space
-        
-        vPosition = worldPosition.xyz;  // Pass the world position to the fragment shader
-        
-        vTexCoord = aTexCoord;
-        gl_Position = uTotalProjectionMatrix * uModelMatrix * vec4(translatedPosition, 1.0);
-    }`;
+    let vertexShaderSource = importShader('planet.vert');
 
     // Fragment shader
-    let fragmentShaderSource = `#version 300 es
-    #pragma vscode_glsllint_stage: frag
-    precision highp float;
-
-    in vec2 vTexCoord;
-    in vec3 vPosition;
-    in vec3 vNormal;
-
-    uniform sampler2D uTexture;
-    uniform sampler2D uTextureCloud;
-    uniform float uTime; // Time uniform for animation
-    uniform float uCloudRotation; // Speed of cloud movement
-    uniform float uRotation;
-    uniform vec4 uCloudColor;
-    uniform vec4 uPlanetColor;
-
-    // Spotlight uniforms
-    uniform vec3 uLightPosition;
-    uniform vec3 uLightDirection;
-    uniform float uLightInnerCutoff;
-    uniform float uLightOuterCutoff;
-
-    out vec4 fragColor;
-
-    void main() {
-        // === Planet & Cloud Texture Blending ===
-        vec2 planetTexCoord = vec2(vTexCoord.x, vTexCoord.y) + vec2(uTime * uRotation, 0.0);
-        vec4 tempPlanetColor = texture(uTexture, planetTexCoord);
-        vec4 planetColor = tempPlanetColor * uPlanetColor;
-
-        vec2 cloudTexCoord = vTexCoord + (uTime * vec2(uCloudRotation * 0.09, 0.0));
-        vec4 tempCloudColor = texture(uTextureCloud, cloudTexCoord);
-        vec4 cloudColor = tempCloudColor * uCloudColor;
-
-        vec4 blendedColor = mix(planetColor, cloudColor, cloudColor.a);
-
-        // === Spotlight Lighting ===
-        vec3 offset = uLightPosition - vPosition;
-        vec3 surfaceToLight = normalize(offset);
-        vec3 lightToSurface = -surfaceToLight;
-
-        float diffuse = max(0.0, dot(surfaceToLight, normalize(vNormal)));
-        float angleToSurface = acos(dot(lightToSurface, normalize(uLightDirection)));
-        float spot = smoothstep(uLightOuterCutoff, uLightInnerCutoff, angleToSurface);
-
-        float brightness = diffuse * spot;
-
-        // Final color with lighting applied
-        fragColor = blendedColor * spot;
-        fragColor.a = 1.0;
-    }`;
+    let fragmentShaderSource = importShader('planet.frag');
 
     let backgroundVertexShaderSource = `#version 300 es
     #pragma vscode_glsllint_stage: vert
@@ -288,23 +191,6 @@ function planetEngine({
         fragColor = vec4(atmosphereColor, atmosphereFactor * 0.5); // Adjust alpha for transparency
         fragColor = vec4(1.0, 0.0, 1.0, 1.0); // Set alpha to 1.0 for full opacity
     }`;
-
-    // Compile shaders
-    function compileShader(gl: WebGL2RenderingContext, source: string, type: GLenum) {
-        let shader = gl.createShader(type);
-        if (!shader) throw new Error(`Unable to create shader, ${source} failed.`);
-
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            // console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
-            // gl.deleteShader(shader);
-            throw new Error(`Unable to create shader, ${source} failed. ` + gl.getShaderInfoLog(shader));
-        }
-
-        return shader;
-    }
 
     //wip
 
