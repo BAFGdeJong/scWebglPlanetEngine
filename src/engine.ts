@@ -96,11 +96,6 @@ function planetEngine({
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    let backgroundVertexShaderSource = importShader('background.vert');
-    let backgroundFragmentShaderSource = importShader('background.frag');
-    let atmosphereVertexShaderSource = importShader('atmosphere.vert');
-    let atmosphereFragmentShaderSource = importShader('atmosphere.frag');
-
     //wip
 
     // if (texturePlanetIsCompressed) {

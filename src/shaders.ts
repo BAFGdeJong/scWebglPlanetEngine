@@ -4,38 +4,23 @@ const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eag
 const shaderMap: Record<string, string> = {};
 
 for (const path in shaderFiles) {
-  const fileName = path.split('/').pop()!;
-  shaderMap[fileName] = shaderFiles[path];
+    const fileName = path.split('/').pop()!;
+    shaderMap[fileName] = shaderFiles[path];
 }
 
 export function importShader(name: string): string {
-  const shader = shaderMap[name];
-  if (!shader) throw new Error(`Shader not found: ${name}`);
-  return shader;
+    /**
+     * Imports a shader from the shaders folder.
+     *
+     * @param {number} name - Name of the file to import.
+     * @returns {string} - The shader code in string format.
+     * @throws {Error} - If the shader is not found.
+     */
+
+    const shader = shaderMap[name];
+    if (!shader) throw new Error(`Shader not found: ${name}`);
+    return shader;
 }
-
-// // src/shaders.ts
-// import planetVert from './shaders/planet.vert';
-// import planetFrag from './shaders/planet.frag';
-// import atmosphereVert from './shaders/atmosphere.vert';
-// import atmosphereFrag from './shaders/atmosphere.frag';
-// import backgroundVert from './shaders/background.vert';
-// import backgroundFrag from './shaders/background.frag';
-
-// const shaderMap: Record<string, string> = {
-//     'planet.vert': planetVert,
-//     'planet.frag': planetFrag,
-//     'atmosphere.vert': atmosphereVert,
-//     'atmosphere.frag': atmosphereFrag,
-//     'background.vert': backgroundVert,
-//     'background.frag': backgroundFrag,
-// };
-
-// export function importShader(name: string): string {
-//   const shader = shaderMap[name];
-//   if (!shader) throw new Error(`Shader not found: ${name}`);
-//   return shader;
-// }
 
 // Compile shaders
 export function compileShader(gl: WebGL2RenderingContext, source: string, type: GLenum) {
