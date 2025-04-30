@@ -1,11 +1,13 @@
 {
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "vite": "^5.4.19"
+    "vite": "^5.4.19",
+    "vite-plugin-html": "^3.2.2"
   },
   "scripts": {
     "check": "tsc --noEmit",
     "build": "vite build --config vite.config.ts && terser dist/planetEngine.iife.js -o dist/planetEngine.min.js --compress --mangle",
-    "dev": "npm run check && npm run build"
+    "dev-build": "vite build --config vite.config.ts",
+    "serve": "vite preview --port 5151 --config vite.config.ts",
+    "dev": "npm run check && npm run dev-build && npm run serve"
   }
 }

@@ -449,11 +449,11 @@ function planetEngine({
 
 planetEngine({
     // Planet texturing information
-    texturePlanetUrl: '../textures/arid.jpg',
+    texturePlanetUrl: './textures/arid.jpg',
     texturePlanetIsCompressed: false,
-    textureCloudUrl: '../textures/clouds_banded01.png',
+    textureCloudUrl: './textures/clouds_banded01.png',
     textureCloudIsCompressed: false,
-    textureBackgroundUrl: '../textures/background2.jpg',
+    textureBackgroundUrl: './textures/background2.jpg',
     textureBackgroundIsCompressed: false,
     textureAtmosphereUrl: '',
     textureAtmosphereIsCompressed: false,
