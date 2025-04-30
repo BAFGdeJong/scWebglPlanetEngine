@@ -1,11 +1,12 @@
 {
   "devDependencies": {
     "esbuild": "^0.25.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19"
   },
   "scripts": {
     "check": "tsc --noEmit",
-    "build": "esbuild src/engine.ts --bundle --platform=browser --outfile=bin/bundle.js  --loader:.vert=text --loader:.frag=text && terser bin/bundle.js -o bin/bundle.min.js --compress --mangle",
+    "build": "vite build --config vite.config.ts && terser dist/planetEngine.iife.js -o dist/planetEngine.min.js --compress --mangle",
     "dev": "npm run check && npm run build"
   }
 }
