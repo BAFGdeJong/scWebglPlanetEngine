@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    // root: '/',
     build: {
         outDir: 'dist',
         emptyOutDir: false,
@@ -16,6 +17,11 @@ export default defineConfig({
             output: {
                 inlineDynamicImports: true,
             },
+        },
+    },
+    server: {
+        watch: {
+            usePolling: true,
         },
     },
     // optimizeDeps: {

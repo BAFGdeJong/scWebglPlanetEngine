@@ -7,6 +7,6 @@
     "check": "tsc --noEmit",
     "build": "vite build --config vite.config.ts && terser dist/planetEngine.iife.js -o dist/planetEngine.min.js --compress --mangle",
     "dev-build": "npm run check && vite build --config vite.config.dev.ts",
-    "dev": "npm run dev-build && vite dev --config vite.config.dev.ts"
+    "dev": "vite --config vite.config.dev.ts"
   }
 }
