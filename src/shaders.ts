@@ -1,5 +1,6 @@
 // TODO glob deprecated
 const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
+// const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: '?raw', eager: true }) as Record<string, string>; << Code doesn't work because it becomes a object.
 
 const shaderMap: Record<string, string> = {};
 

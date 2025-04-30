@@ -6,8 +6,7 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "vite build --config vite.config.ts && terser dist/planetEngine.iife.js -o dist/planetEngine.min.js --compress --mangle",
-    "dev-build": "vite build --config vite.config.ts",
-    "serve": "vite preview --port 5151 --config vite.config.ts",
-    "dev": "npm run check && npm run dev-build && npm run serve"
+    "dev-build": "npm run check && vite build --config vite.config.dev.ts",
+    "dev": "npm run dev-build && vite dev --config vite.config.dev.ts"
   }
 }
