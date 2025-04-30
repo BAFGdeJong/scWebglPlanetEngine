@@ -96,101 +96,10 @@ function planetEngine({
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
-    // Vertex shader
-    let vertexShaderSource = importShader('planet.vert');
-
-    // Fragment shader
-    let fragmentShaderSource = importShader('planet.frag');
-
-    let backgroundVertexShaderSource = `#version 300 es
-    #pragma vscode_glsllint_stage: vert
-
-    in vec2 aPosition;
-    in vec2 aTexCoord;
-    
-    out vec2 vTexCoord;
-
-    void main() {
-        vTexCoord = aTexCoord;
-        gl_Position = vec4(aPosition, 0.0, 1.0);
-    }`;
-
-    let backgroundFragmentShaderSource = `#version 300 es
-    #pragma vscode_glsllint_stage: frag
-
-    precision highp float;
-
-    uniform sampler2D uTexture;
-    in vec2 vTexCoord;
-
-    out vec4 fragColor;
-
-    void main() {
-        fragColor = texture(uTexture, vTexCoord);
-    }`;
-
-    let atmosphereVertexShaderSource = `#version 300 es
-    #pragma vscode_glsllint_stage: vert
-
-    in vec3 aPosition;
-    in vec3 aNormal;
-
-    uniform mat4 uModelMatrix;
-    uniform vec3 uSphereTranslation;
-    uniform mat4 uViewProjectionMatrix;
-
-    out vec3 vPosition;
-    out vec3 vNormal;
-
-    void main() {
-        vNormal = mat3(uModelMatrix) * aNormal; // Transform normal to world space
-
-        vec3 translatedPosition = aPosition + uSphereTranslation;
-        vec4 worldPosition = uModelMatrix * vec4(translatedPosition, 1.0);
-
-        vPosition = worldPosition.xyz; // World-space position
-
-        gl_Position = uViewProjectionMatrix * vec4(vPosition, 1.0);
-    }`;
-
-    let atmosphereFragmentShaderSource = `#version 300 es
-    #pragma vscode_glsllint_stage: frag
-
-    precision highp float;
-
-    in vec3 vPosition;
-    in vec3 vNormal;
-
-    // uniform vec3 uLightPosition; // Light source position
-    uniform vec3 uPlanetCenter;  // Planet's center position
-    uniform vec3 uAtmosphereColor; // Atmosphere color
-    uniform float uAtmosphereRadius; // Outer radius of the atmosphere
-    uniform float uPlanetRadius; // Radius of the planet
-
-    out vec4 fragColor;
-
-    void main() {
-        // Calculate normalized direction vectors
-        // vec3 lightDir = normalize(uLightPosition - vPosition);
-        vec3 viewDir = normalize(vPosition - uPlanetCenter);
-        vec3 normal = normalize(vNormal);
-
-        // Calculate the distance from the planet's center
-        float dist = length(vPosition - uPlanetCenter);
-
-        // Atmosphere falloff based on distance
-        float atmosphereFactor = smoothstep(uPlanetRadius, uAtmosphereRadius, dist);
-
-        // Light scattering effect
-        // float scattering = max(dot(normal, lightDir), 0.0);
-
-        // Combine scattering and atmosphere falloff
-        vec3 atmosphereColor = uAtmosphereColor * atmosphereFactor;
-
-        // Additive blending for glow effect
-        fragColor = vec4(atmosphereColor, atmosphereFactor * 0.5); // Adjust alpha for transparency
-        fragColor = vec4(1.0, 0.0, 1.0, 1.0); // Set alpha to 1.0 for full opacity
-    }`;
+    let backgroundVertexShaderSource = importShader('background.vert');
+    let backgroundFragmentShaderSource = importShader('background.frag');
+    let atmosphereVertexShaderSource = importShader('atmosphere.vert');
+    let atmosphereFragmentShaderSource = importShader('atmosphere.frag');
 
     //wip
 
@@ -235,8 +144,8 @@ function planetEngine({
         return program;
     }
 
-    function planetProgram(gl: WebGL2RenderingContext, vertexShader: string, fragmentShader: string) {
-        let program = createProgram(gl, vertexShader, fragmentShader);
+    function planetProgram(gl: WebGL2RenderingContext) {
+        let program = createProgram(gl, importShader('planet.vert'), importShader('planet.frag'));
         gl.useProgram(program);
 
         // Create sphere geometry
@@ -313,8 +222,8 @@ function planetEngine({
 
     }
 
-    function atmosphereProgram(gl: any, current_program: any, vertexShader: any, fragmentShader: any) {
-        let program = createProgram(gl, vertexShader, fragmentShader);
+    function atmosphereProgram(gl: any, current_program: any) {
+        let program = createProgram(gl, importShader('atmosphere.vert'), importShader('atmosphere.frag'));
         gl.useProgram(program);
 
         let atmosphereRadius = 1.05; // Slightly larger than the planet
@@ -357,7 +266,7 @@ function planetEngine({
         };
     }
 
-    function backgroundProgram(gl: any, current_program: any, fragmentShaderSource: any, vertexShaderSource: any) {
+    function backgroundProgram(gl: any, current_program: any) {
         const quadVertices = new Float32Array([
             // x, y,   u, v
             -1, -1,   0, 0,
@@ -370,8 +279,8 @@ function planetEngine({
         gl.bindBuffer(gl.ARRAY_BUFFER, bgVBO);
         gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
 
-        const bgVertexShader = compileShader(gl, backgroundVertexShaderSource, gl.VERTEX_SHADER);
-        const bgFragmentShader = compileShader(gl, backgroundFragmentShaderSource, gl.FRAGMENT_SHADER);
+        const bgVertexShader = compileShader(gl, importShader('background.vert'), gl.VERTEX_SHADER);
+        const bgFragmentShader = compileShader(gl, importShader('background.frag'), gl.FRAGMENT_SHADER);
         const bgProgram = gl.createProgram();
         gl.attachShader(bgProgram, bgVertexShader);
         gl.attachShader(bgProgram, bgFragmentShader);
@@ -401,11 +310,11 @@ function planetEngine({
           };
     }
 
-    let program = planetProgram(gl, vertexShaderSource, fragmentShaderSource);
+    let program = planetProgram(gl);
     // let atmosphereProg = atmosphereProgram(gl, program.program, atmosphereFragmentShaderSource, atmosphereVertexShaderSource);
-    let bgProgram = backgroundProgram(gl, program.program, backgroundFragmentShaderSource, backgroundVertexShaderSource);
+    // let bgProgram = backgroundProgram(gl, program.program);
 
-    // function drawBackground(gl, current_program, bgProg) {
+    // function drawBackground(gl: any, current_program: any, bgProg: any) {
     //     gl.disable(gl.DEPTH_TEST);
     //     gl.disable(gl.BLEND)
     //     gl.depthMask(false);
@@ -425,13 +334,13 @@ function planetEngine({
     //     gl.depthMask(true);
     //     gl.enable(gl.BLEND);
 
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    //     gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
-    //     gl.enableVertexAttribArray(positionAttributeLocation);
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.positionBuffer);
+    //     gl.vertexAttribPointer(bgProg.positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+    //     gl.enableVertexAttribArray(bgProg.positionAttributeLocation);
 
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-    //     gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-    //     gl.enableVertexAttribArray(texCoordAttributeLocation);
+    //     gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.texCoordBuffer);
+    //     gl.vertexAttribPointer(bgProg.texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    //     gl.enableVertexAttribArray(bgProg.texCoordAttributeLocation);
 
     // }
 
@@ -474,7 +383,7 @@ function planetEngine({
 
         clearCanvas(gl);
 
-        // drawBackground(program.program, bgProgram);
+        // drawBackground(gl, program.program, bgProgram);
 
         let currentTime = (performance.now() - startTime) / 1000;
         gl.uniform1f(timeLocation, currentTime);

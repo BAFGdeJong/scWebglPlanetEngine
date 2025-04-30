@@ -1,10 +1,18 @@
 // src/shaders.ts
 import planetVert from './shaders/planet.vert';
 import planetFrag from './shaders/planet.frag';
+import atmosphereVert from './shaders/atmosphere.vert';
+import atmosphereFrag from './shaders/atmosphere.frag';
+import backgroundVert from './shaders/background.vert';
+import backgroundFrag from './shaders/background.frag';
 
-const shaderMap: any = {
-  'planet.vert': planetVert,
-  'planet.frag': planetFrag,
+const shaderMap: Record<string, string> = {
+    'planet.vert': planetVert,
+    'planet.frag': planetFrag,
+    'atmosphere.vert': atmosphereVert,
+    'atmosphere.frag': atmosphereFrag,
+    'background.vert': backgroundVert,
+    'background.frag': backgroundFrag,
 };
 
 export function importShader(name: string): string {
