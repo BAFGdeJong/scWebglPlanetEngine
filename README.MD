@@ -1,15 +1,18 @@
+Add ingame textures to ./dist/textures/ for local testing.
+
 Packages:  
     `npm install typescript --save-dev`  
     `npm install terser -g`  
     `npm install vite --save-dev`  
   
-^ Use npm install for quick install.  
+^ Use npm install for quick installation.  
   
 Scripts:  
-    `npm run compile`  
     `npm run build`  
     `npm run dev`  
   
-^ Ways to compile.  
+^ Use dev for dev environment, build for final dist.  
   
-Use `serve .` to run on localhost.  
+Important to disable when not debugging,  
+minify: false, Inside vite.config.ts < Set to true  
+sourcemap: true, Inside vite.config.ts  < Set to false  
