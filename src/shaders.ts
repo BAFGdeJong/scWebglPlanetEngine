@@ -32,8 +32,9 @@ function getShaderType(gl: WebGLRenderingContext, ext: string): number {
 * 
 * Imports a shader from the shaders folder.
 *
+* @param {WebGL2RenderingContext} gl - The WebGL context.
 * @param {number} name - Name of the file to import.
-* @returns {string} - The shader code in string format.
+* @returns {WebGLShader} - The compiled shader.
 * @throws {Error} - If the shader is not found.
 * 
 */
