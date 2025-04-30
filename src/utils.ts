@@ -722,15 +722,6 @@ export function loadTexture(gl: WebGL2RenderingContext, glProgram: any, uniformN
         // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     };
 
-    console.log("Texture loaded: " + url);
-    console.log("Texture ID: " + textureId);
-    console.log("Texture location: " + uniformName);
-    console.log("Texture object: " + texture);
-    console.log("Texture image: " + image);
-    console.log("Texture image width: " + image.width);
-    console.log("Texture image height: " + image.height);
-    
-
     let location = gl.getUniformLocation(glProgram, uniformName);
     return {id: textureId, location, texture};
 }

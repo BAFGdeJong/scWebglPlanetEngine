@@ -171,7 +171,6 @@ function planetEngine({
         gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
         let texture = utils.loadTexture(gl, program, 'uTexture', texturePlanetUrl, 0);
-        console.log(texture);
         utils.assignTexture(gl, texture.id, texture.location!); // TODO error handling
         let planetColorLocation = gl.getUniformLocation(program, 'uPlanetColor');
         gl.uniform4fv(planetColorLocation, planetColor.get_normalized_rgba());
