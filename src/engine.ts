@@ -1,37 +1,10 @@
 'use strict';
 
 import * as utils from './utils.ts';
-import { importShader } from './shaders.ts';
+import { Color } from './utils.ts';
+import { planetProgram, ShaderProgram } from './programs.ts';
+import { TextureMap, Texture } from './textures.ts';
 
-class Color {
-    r: number;
-    g: number;
-    b: number;
-    a: number;
-    constructor(r: number, g: number, b:number, a:number=0.0) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-    }
-
-    get_normalized_rgba() {
-        return [this.r / 255, this.g / 255, this.b / 255, this.a / 255];
-    }
-
-    get_rgba() {
-        return [this.r, this.g, this.b, this.a];
-    }
-
-    get_normalized_rgb() {
-        return [this.r / 255, this.g / 255, this.b / 255];
-    }
-
-    get_rgb() {
-        return [this.r, this.g, this.b];
-    }
-
-}
 
 function planetEngine({
     texturePlanetUrl = 'null',
@@ -96,6 +69,8 @@ function planetEngine({
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
+    let textureMap = new TextureMap();
+
     //wip
 
     // if (texturePlanetIsCompressed) {
@@ -122,188 +97,6 @@ function planetEngine({
 
     // Bind and setup lighting
 
-    function createProgram(gl: WebGL2RenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
-
-        let program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-
-        gl.linkProgram(program);
-
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            console.error('Program linking error:', gl.getProgramInfoLog(program));
-        }
-
-        return program;
-    }
-
-    function planetProgram(gl: WebGL2RenderingContext) {
-        let program = createProgram(gl, importShader(gl, 'planet.vert'), importShader(gl, 'planet.frag'));
-        gl.useProgram(program);
-
-        // Create sphere geometry
-        let sphere = utils.createSphere(subdivisions, radius);
-
-        // Create buffers
-        let positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, sphere.positions, gl.STATIC_DRAW);
-
-        let indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sphere.indices, gl.STATIC_DRAW);
-
-        // Update attribute for texture coordinates
-        let texCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, sphere.texCoords, gl.STATIC_DRAW);
-
-        // Set up attribute
-        let positionAttributeLocation = gl.getAttribLocation(program, 'aPosition');
-        gl.enableVertexAttribArray(positionAttributeLocation);
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.vertexAttribPointer(positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
-
-        // Set up attribute for texture coordinates
-        let texCoordAttributeLocation = gl.getAttribLocation(program, 'aTexCoord');
-        gl.enableVertexAttribArray(texCoordAttributeLocation);
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-        gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-
-        let texture = utils.loadTexture(gl, program, 'uTexture', texturePlanetUrl, 0);
-        utils.assignTexture(gl, texture.id, texture.location!); // TODO error handling
-        let planetColorLocation = gl.getUniformLocation(program, 'uPlanetColor');
-        gl.uniform4fv(planetColorLocation, planetColor.get_normalized_rgba());
-
-        let textureCloud = utils.loadTexture(gl, program, 'uTextureCloud', textureCloudUrl, 1);
-        utils.assignTexture(gl, textureCloud.id, textureCloud.location!); // TODO error handling
-        let cloudRotationLocation = gl.getUniformLocation(program, 'uCloudRotation');
-        gl.uniform1f(cloudRotationLocation, cloudRotation * Math.PI / 180);
-        let cloudColorLocation = gl.getUniformLocation(program, 'uCloudColor');
-        gl.uniform4fv(cloudColorLocation, cloudColor.get_normalized_rgba());
-
-        let lightPositionLocation = gl.getUniformLocation(program, 'uLightPosition');
-        let lightDirectionLocation = gl.getUniformLocation(program, 'uLightDirection');
-        let lightInnerLocation = gl.getUniformLocation(program, 'uLightInnerCutoff');
-        let lightOuterLocation = gl.getUniformLocation(program, 'uLightOuterCutoff');
-
-        gl.uniform3fv(lightPositionLocation, lightPosition);        // Example light position
-        gl.uniform3fv(lightDirectionLocation, [0.0, 0.0, 1.0]);       // Example direction
-        gl.uniform1f(lightInnerLocation, utils.radians(40.0));         // Inner cone angle in radians
-        gl.uniform1f(lightOuterLocation, utils.radians(85.0));         // Outer cone angle in radians
-
-        let rotationLocation = gl.getUniformLocation(program, 'uRotation');
-
-        return {
-            program: program,
-            sphere: sphere,
-            positionBuffer: positionBuffer,
-            indexBuffer: indexBuffer,
-            positionAttributeLocation: positionAttributeLocation,
-            texCoordAttributeLocation: texCoordAttributeLocation,
-            texture: texture,
-            textureCloud: textureCloud,
-            planetColorLocation: planetColorLocation,
-            cloudRotationLocation: cloudRotationLocation,
-            cloudColorLocation: cloudColorLocation,
-            lightPositionLocation: lightPositionLocation,
-            lightDirectionLocation: lightDirectionLocation,
-            lightInnerLocation: lightInnerLocation,
-            lightOuterLocation: lightOuterLocation,
-            rotationLocation: rotationLocation,
-        }
-
-    }
-
-    function atmosphereProgram(gl: any, current_program: any) {
-        let program = createProgram(gl, importShader(gl, 'atmosphere.vert'), importShader(gl, 'atmosphere.frag'));
-        gl.useProgram(program);
-
-        let atmosphereRadius = 1.05; // Slightly larger than the planet
-        let atmosphereSphere = utils.createSphere(subdivisions, atmosphereRadius);
-    
-        // Create buffers for the atmosphere sphere
-        let positionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, atmosphereSphere.positions, gl.STATIC_DRAW);
-    
-        let indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, atmosphereSphere.indices, gl.STATIC_DRAW);
-    
-        // let lightPositionLocation = gl.getUniformLocation(atmosphereProgram, 'uLightPosition');
-        let planetCenterLocation = gl.getUniformLocation(program, 'uPlanetCenter');
-        let atmosphereColorLocation = gl.getUniformLocation(program, 'uAtmosphereColor');
-        let atmosphereRadiusLocation = gl.getUniformLocation(program, 'uAtmosphereRadius');
-        let planetRadiusLocation = gl.getUniformLocation(program, 'uPlanetRadius');
-    
-        // gl.uniform3fv(lightPositionLocation, lightPosition);
-        gl.uniform3fv(planetCenterLocation, [0.0, 0.0, 0.0]); // Assuming planet is at origin
-        gl.uniform3fv(atmosphereColorLocation, [0.4, 0.7, 1.0]); // Light blue atmosphere
-        gl.uniform1f(atmosphereRadiusLocation, atmosphereRadius);
-        gl.uniform1f(planetRadiusLocation, radius);
-    
-        gl.useProgram(current_program);
-    
-        return {
-            program: program,
-            positionBuffer: positionBuffer,
-            indexBuffer: indexBuffer,
-            // lightPositionLocation,
-            planetCenterLocation,
-            atmosphereColorLocation,
-            atmosphereRadiusLocation,
-            planetRadiusLocation,
-            atmosphereSphere,
-            atmosphereRadius,
-        };
-    }
-
-    function backgroundProgram(gl: any, current_program: any) {
-        const quadVertices = new Float32Array([
-            // x, y,   u, v
-            -1, -1,   0, 0,
-             1, -1,   1, 0,
-            -1,  1,   0, 1,
-             1,  1,   1, 1,
-        ]);
-
-        const bgVBO = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, bgVBO);
-        gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
-
-        const bgVertexShader = importShader(gl, 'background.vert');
-        const bgFragmentShader = importShader(gl, 'background.frag');
-        const bgProgram = gl.createProgram();
-        gl.attachShader(bgProgram, bgVertexShader);
-        gl.attachShader(bgProgram, bgFragmentShader);
-        gl.linkProgram(bgProgram);
-
-        if (!gl.getProgramParameter(bgProgram, gl.LINK_STATUS)) {
-            const info = gl.getProgramInfoLog(bgProgram);
-            throw `Could not compile WebGL program. \n\n${info}`;
-        }
-
-        gl.useProgram(bgProgram);
-
-        let aBackPositionLocation = gl.getAttribLocation(bgProgram, "aPosition");
-        let aBackTexCoordLocation = gl.getAttribLocation(bgProgram, "aTexCoord");
-
-        let backgroundTexture = utils.loadTexture(gl, bgProgram, 'uTexture', textureBackgroundUrl, 14);
-        utils.assignTexture(gl, backgroundTexture.id, backgroundTexture.location!); // TODO error handling
-
-        gl.useProgram(current_program);
-
-        return {
-            program: bgProgram,
-            bgVertexBuffer: bgVBO,
-            backgroundTexture: backgroundTexture,
-            aPositionLocation: aBackPositionLocation,
-            aTexCoordLocation: aBackTexCoordLocation
-          };
-    }
-
-    let program = planetProgram(gl);
     // let atmosphereProg = atmosphereProgram(gl, program.program, atmosphereFragmentShaderSource, atmosphereVertexShaderSource);
     // let bgProgram = backgroundProgram(gl, program.program);
 
@@ -348,9 +141,22 @@ function planetEngine({
         rotation: [0, 0, 0]   // No initial rotation
     };
 
-    // Set up uniform
-    const totalProjectionMatrixLocation = gl.getUniformLocation(program.program, 'uTotalProjectionMatrix');
-    const modelMatrixLocation = gl.getUniformLocation(program.program, 'uModelMatrix');
+    let planetShaderProgram = planetProgram(
+        gl,
+        textureMap,
+        texturePlanetUrl,
+        textureCloudUrl,
+        planetColor,
+        cloudColor,
+        cloudRotation,
+        subdivisions,
+        radius,
+    );
+
+    console.log(planetShaderProgram);
+
+    // const totalProjectionMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uTotalProjectionMatrix');
+    // const modelMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uModelMatrix');
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);
@@ -360,11 +166,16 @@ function planetEngine({
     gl.enable(gl.CULL_FACE);
 
     // Add time uniform to the render loop
-    const timeLocation = gl.getUniformLocation(program.program, 'uTime');
     let startTime = performance.now();
 
-    const sphereTranslationLocation = gl.getUniformLocation(program.program, 'uSphereTranslation');
-    let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
+    let initMatrix = utils.createMat4();
+
+    planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uTotalProjectionMatrix', initMatrix);
+    planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uModelMatrix', initMatrix);
+    planetShaderProgram.program.createUniform(gl.uniform1f, 'uTime', startTime);
+
+    // const sphereTranslationLocation = gl.getUniformLocation(program.program, 'uSphereTranslation');
+    // let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
     let fov = Math.PI * 0.25
 
     // function tick(time: number) {
@@ -379,7 +190,7 @@ function planetEngine({
         // drawBackground(gl, program.program, bgProgram);
 
         let currentTime = (performance.now() - startTime) / 1000;
-        gl.uniform1f(timeLocation, currentTime);
+        planetShaderProgram.program.updateUniform(gl.uniform1f, 'uTime', currentTime);
 
         // May want to modify canvas dimensions later, thus is in render loop.
         let projectionMatrix = utils.createMat4();
@@ -411,14 +222,18 @@ function planetEngine({
         // translate(modelMatrix, modelMatrix, [0, 0, 0]);
 
         // Set the final model matrix for the planet (including rotation and translation)
-        gl.uniformMatrix4fv(modelMatrixLocation, false, modelMatrix);
+        planetShaderProgram.program.updateUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uModelMatrix', modelMatrix);
     
         // Set the total projection matrix (projection * view)
-        gl.uniformMatrix4fv(totalProjectionMatrixLocation, false, pv);
+        planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uTotalProjectionMatrix', pv);
     
+        console.log(planetShaderProgram.program.getUniforms());
+        console.log(planetShaderProgram.program.getAttributes());
+        console.log(planetShaderProgram.program.getTextures());
+
         // Bind the index buffer and draw the sphere
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, program.indexBuffer);
-        gl.drawElements(gl.TRIANGLES, program.sphere.indices.length, gl.UNSIGNED_SHORT, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, planetShaderProgram.indexBuffer!);
+        gl.drawElements(gl.TRIANGLES, planetShaderProgram.sphere.indices.length, gl.UNSIGNED_SHORT, 0);
 
         // // Use the atmosphere shader program
         // gl.useProgram(atmosphereProg.program);
@@ -488,3 +303,4 @@ planetEngine({
     cameraDistance: 3,
 
 }); // Compression wip
+

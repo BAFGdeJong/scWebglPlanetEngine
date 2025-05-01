@@ -696,36 +696,34 @@ export function createRing(innerRadius: number, outerRadius: number, segments: n
         texCoords: new Float32Array(texCoords),
         indices: new Uint16Array(indices),
     };
-    }
-
-// Load texture
-export function loadTexture(gl: WebGL2RenderingContext, glProgram: any, uniformName: string, url: string, textureId: number) {
-    let texture = gl.createTexture();
-    let image = new Image();
-
-    image.src = url;
-
-    image.onload = function() {
-        gl.activeTexture(gl.TEXTURE0 + textureId);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-        gl.generateMipmap(gl.TEXTURE_2D);
-
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    };
-
-    let location = gl.getUniformLocation(glProgram, uniformName);
-    return {id: textureId, location, texture};
 }
 
-export function assignTexture(gl: WebGL2RenderingContext, id: number, location: WebGLUniformLocation) {
-    gl.uniform1i(location, id);
+export class Color {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+    constructor(r: number, g: number, b:number, a:number=0.0) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    get_normalized_rgba() {
+        return [this.r / 255, this.g / 255, this.b / 255, this.a / 255];
+    }
+
+    get_rgba() {
+        return [this.r, this.g, this.b, this.a];
+    }
+
+    get_normalized_rgb() {
+        return [this.r / 255, this.g / 255, this.b / 255];
+    }
+
+    get_rgb() {
+        return [this.r, this.g, this.b];
+    }
+
 }
