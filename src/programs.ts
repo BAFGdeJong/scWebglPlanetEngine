@@ -2,6 +2,235 @@ import * as utils from './utils.js';
 import { ShaderMap, Shader, Uniform, Attribute} from './shaders.ts';
 import { TextureMap, Texture } from './textures.ts';
 
+abstract class ModelObject {
+    protected gl: WebGL2RenderingContext;
+    protected buffer: WebGLBuffer;
+    protected object: any; // TODO Define a better type for this
+    protected bufferArrayType: number;
+    protected bufferType: number;
+
+
+    constructor(gl: WebGL2RenderingContext, bufferArrayType: number, bufferType: number) {
+        this.gl = gl;
+        this.bufferArrayType = bufferArrayType;
+        this.bufferType = bufferType;
+
+        this.buffer = this.gl.createBuffer();
+        if (!this.buffer) {
+            console.error('Failed to create buffer');
+            return;
+        }
+
+    }
+
+    getBuffer() {
+        return this.buffer;
+    }
+
+    abstract setBuffer(): void;
+    abstract draw(): void;
+
+}
+
+abstract class Object3D extends ModelObject {
+}
+
+// abstract class Object3D extends ModelObject {
+//     constructor(
+//         positions: Float32Array,
+//         normals: Float32Array,
+//         textCoords: Float32Array,
+//         indices: Uint16Array
+//     ) {
+//         super(gl, gl.ELEMENT_ARRAY_BUFFER, gl.STATIC_DRAW);
+//         this.positions = positions;
+//         this.normals = normals;
+//         this.textCoords = textCoords;
+//         this.indices = indices;
+//     }
+
+//     abstract draw(): void;
+// }
+
+// TODO move this to a separate file
+// class ModelObject {
+//     private gl: WebGL2RenderingContext;
+//     private buffer: WebGLBuffer;
+//     private object: any; // TODO Define a better type for this
+
+//     constructor(gl: WebGL2RenderingContext, object: any) {
+
+//         this.gl = gl;
+//         this.object = object;
+
+//         this.buffer = this.gl.createBuffer();
+//         if (!this.buffer) {
+//             console.error('Failed to create buffer');
+//             return;
+//         }
+
+//         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffer);
+//         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.object.indices, gl.STATIC_DRAW); // TODO needs to be more flexible, not just indices and static draw
+
+//     }
+
+//     getBuffer() {
+//         return this.buffer;
+//     }
+
+//     drawObject() {
+//         this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, this.buffer);
+//         this.gl.drawElements(this.gl.TRIANGLES, this.object.indices.length, this.gl.UNSIGNED_SHORT, 0); // TODO needs to be more flexible, not just indices and static draw
+//     }
+
+// }
+
+class SphereObject extends Object3D {
+
+    private positions: Float32Array | null;
+    private normals: Float32Array | null;
+    private texCoords: Float32Array | null;
+    private indices: Uint16Array | null;
+    private normalLines: Float32Array | null;
+
+    constructor(gl: WebGL2RenderingContext, radius: number, subdivisions: number) {
+        super(gl, gl.ELEMENT_ARRAY_BUFFER, gl.STATIC_DRAW);
+        this.gl = gl;
+
+        this.positions = null;
+        this.normals = null;
+        this.texCoords = null;
+        this.indices = null;
+        this.normalLines = null;
+
+        this.createSphere(subdivisions, radius);
+
+        this.buffer = this.gl.createBuffer();
+        if (!this.buffer) {
+            console.error('Failed to create buffer');
+            return;
+        }
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffer);
+        gl.bufferData(this.bufferArrayType, this.indices, this.bufferType);
+
+
+    }
+
+    getPositions() {
+        return this.positions;
+    }
+    getNormals() {
+        return this.normals;
+    }
+    getTexCoords() {
+        return this.texCoords;
+    }
+    getIndices() {
+        return this.indices;
+    }
+    getNormalLines() {
+        return this.normalLines;
+    }
+
+    setBuffer() {
+    }
+
+    draw() {
+        if (!this.indices) {
+            console.error('No indices to draw');
+            return;
+        }
+
+        this.gl.bindBuffer(this.bufferArrayType, this.buffer);
+        this.gl.drawElements(this.gl.TRIANGLES, this.indices.length, this.gl.UNSIGNED_SHORT, 0);
+    }
+
+    private createSphere(subdivisions: number, radius: number) {
+        const positions = [];
+        const normals = [];
+        const texCoords = [];
+        const indices = [];
+        const normalLines = [];
+    
+        for (let lat = 0; lat <= subdivisions; lat++) {
+            const theta = (lat * Math.PI) / subdivisions;
+            const sinTheta = Math.sin(theta);
+            const cosTheta = Math.cos(theta);
+    
+            for (let lon = 0; lon <= subdivisions; lon++) {
+                const phi = (lon * 2 * Math.PI) / subdivisions;
+                const sinPhi = Math.sin(phi);
+                const cosPhi = Math.cos(phi);
+    
+                const x = radius * cosPhi * sinTheta;
+                const y = radius * cosTheta;
+                const z = radius * sinPhi * sinTheta;
+    
+                const length = Math.sqrt(x * x + y * y + z * z);
+                normals.push(x / length, y / length, z / length);
+    
+                const u = lon / subdivisions;
+                let v = lat / subdivisions;
+                if (lat === 0 || lat === subdivisions) {
+                    v += 0.0001;
+                }
+    
+                positions.push(x, y, z);
+                texCoords.push(u, v);
+            }
+        }
+    
+        // Generate indices
+        for (let lat = 0; lat < subdivisions; lat++) {
+            for (let lon = 0; lon < subdivisions; lon++) {
+                const first = lat * (subdivisions + 1) + lon;
+                const second = first + subdivisions + 1;
+    
+                indices.push(first, first + 1, second);
+                indices.push(second, first + 1, second + 1);
+            }
+        }
+    
+        for (let i = 0; i < positions.length; i += 3) {
+            const px = positions[i];
+            const py = positions[i + 1];
+            const pz = positions[i + 2];
+    
+            const nx = normals[i];
+            const ny = normals[i + 1];
+            const nz = normals[i + 2];
+    
+            normalLines.push(px, py, pz);
+            normalLines.push(px + nx * 0.1, py + ny * 0.1, pz + nz * 0.1);
+        }
+    
+        this.positions = new Float32Array(positions);
+        this.normals = new Float32Array(normals);
+        this.texCoords = new Float32Array(texCoords);
+        this.indices = new Uint16Array(indices);
+        this.normalLines = new Float32Array(normalLines);
+    }
+
+}
+
+// class AttachedModelObject {
+//     private gl: WebGL2RenderingContext;
+//     private program: WebGLProgram;
+//     private object: ModelObject;
+
+//     constructor(gl: WebGL2RenderingContext, program: WebGLProgram, object: ModelObject) {
+//         this.gl = gl;
+//         this.program = program;
+//         this.object = object;
+//     }
+
+//     getBuffer() {
+//         return this.object.getBuffer();
+//     }
+
+// }
+
 class ProgramAttachedUniform {
 
     // TODO Cleanup garbage code.
@@ -112,6 +341,7 @@ export class ShaderProgram {
     private fragmentShader: Shader;
     private attachedUniforms: Map<string, ProgramAttachedUniform> = new Map(); // TODO Could have duplicate uniform names in different shaders
     private attachedAttributes: Map<string, ProgramAttachedAttribute> = new Map();
+    private attachedObjects: Map<string, ModelObject> = new Map();
 
     // private textures: Map<Number, Texture> = new Map();
 
@@ -176,6 +406,29 @@ export class ShaderProgram {
         }
     }
 
+    setObject(name: string, object: Object3D) {
+        this.attachedObjects.set(name, object);
+    }
+
+    getObject(name: string) {
+        let object = this.attachedObjects.get(name);
+        if (object) {
+            return object.getBuffer();
+        } else {
+            console.error(`Object ${name} not found in program`);
+            return null;
+        }
+    }
+
+    drawObject(name: string) {
+        let object = this.attachedObjects.get(name);
+        if (object) {
+            object.draw();
+        } else {
+            console.error(`Object ${name} not found in program`);
+        }
+    }
+
 }
 
 export function planetProgram(
@@ -190,13 +443,14 @@ export function planetProgram(
     radius: number
 ) {
 
-    let program = new ShaderProgram(gl, 'planet.vert', 'planet.frag');
+    let program = new ShaderProgram(gl, 'planet.vert', 'planet.frag'); // TODO create function variable
     program.use();
 
     // Create sphere geometry
-    let sphere = utils.createSphere(subdivisions, radius);
-    program.setAttribute('aPosition', sphere.positions, false);
-    program.setAttribute('aTexCoord', sphere.texCoords, false);
+    let planet = new SphereObject(gl, radius, subdivisions);
+    program.setObject('planet', planet);
+    program.setAttribute('aPosition', planet.getPositions(), false);
+    program.setAttribute('aTexCoord', planet.getTexCoords(), false);
 
     program.loadTexture(textureMap, new Texture(gl, 'uTexturePlanet', planetTextureUrl));
     program.loadTexture(textureMap, new Texture(gl, 'uTextureCloud', cloudTextureUrl));
@@ -204,6 +458,11 @@ export function planetProgram(
     program.setUniform('uPlanetColor', planetColor.get_normalized_rgba());
     program.setUniform('uCloudRotation', cloudRotation * Math.PI / 180);
     program.setUniform('uCloudColor', cloudColor.get_normalized_rgba());
+
+
+    return program;
+
+    // Add lighting later in a different program
 
     // let lightPositionLocation = gl.getUniformLocation(program, 'uLightPosition');
     // let lightDirectionLocation = gl.getUniformLocation(program, 'uLightDirection');
@@ -217,15 +476,12 @@ export function planetProgram(
 
     // let rotationLocation = gl.getUniformLocation(program, 'uRotation');
 
-    let indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, sphere.indices, gl.STATIC_DRAW);
-
-    return { program, sphere, indexBuffer };
-
 }
 
-// function atmosphereProgram(gl: any, current_program: any) {
+// export function atmosphereProgram(
+//     gl: WebGL2RenderingContext,
+
+// ) {
 //     let program = createProgram(gl, importShader(gl, 'atmosphere.vert'), importShader(gl, 'atmosphere.frag'));
 //     gl.useProgram(program);
 
@@ -269,46 +525,62 @@ export function planetProgram(
 //     };
 // }
 
-// function backgroundProgram(gl: any, current_program: any) {
-//     const quadVertices = new Float32Array([
-//         // x, y,   u, v
-//         -1, -1,   0, 0,
-//             1, -1,   1, 0,
-//         -1,  1,   0, 1,
-//             1,  1,   1, 1,
-//     ]);
+export function backgroundProgram(
+    gl: globalThis.WebGL2RenderingContext, 
+    textureMap: TextureMap,
+    textureBackgroundUrl: string
+) {
 
-//     const bgVBO = gl.createBuffer();
-//     gl.bindBuffer(gl.ARRAY_BUFFER, bgVBO);
-//     gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
+    let program = new ShaderProgram(gl, 'background.vert', 'background.frag'); // TODO create function variable
+    program.use();
 
-//     const bgVertexShader = importShader(gl, 'background.vert');
-//     const bgFragmentShader = importShader(gl, 'background.frag');
-//     const bgProgram = gl.createProgram();
-//     gl.attachShader(bgProgram, bgVertexShader);
-//     gl.attachShader(bgProgram, bgFragmentShader);
-//     gl.linkProgram(bgProgram);
+    let quadVertices = new Float32Array([
+        // x, y,   u, v
+       -1, -1,   0, 0,
+        1, -1,   1, 0,
+       -1,  1,   0, 1,
+        1,  1,   1, 1,
+    ]);
 
-//     if (!gl.getProgramParameter(bgProgram, gl.LINK_STATUS)) {
-//         const info = gl.getProgramInfoLog(bgProgram);
-//         throw `Could not compile WebGL program. \n\n${info}`;
-//     }
+    // program.setObject('background', new ModelObject(gl, {indices: quadVertices}));
+    program.setAttribute('aPosition', quadVertices, false);
+    program.setAttribute('aTexCoord', quadVertices, false);
 
-//     gl.useProgram(bgProgram);
+    program.loadTexture(textureMap, new Texture(gl, 'uTextureBackground', textureBackgroundUrl));
 
-//     let aBackPositionLocation = gl.getAttribLocation(bgProgram, "aPosition");
-//     let aBackTexCoordLocation = gl.getAttribLocation(bgProgram, "aTexCoord");
 
-//     let backgroundTexture = utils.loadTexture(gl, bgProgram, 'uTexture', textureBackgroundUrl, 14);
-//     utils.assignTexture(gl, backgroundTexture.id, backgroundTexture.location!); // TODO error handling
+    // const bgVBO = gl.createBuffer();
+    // gl.bindBuffer(gl.ARRAY_BUFFER, bgVBO);
+    // gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW);
 
-//     gl.useProgram(current_program);
+    return program;
+}
 
-//     return {
-//         program: bgProgram,
-//         bgVertexBuffer: bgVBO,
-//         backgroundTexture: backgroundTexture,
-//         aPositionLocation: aBackPositionLocation,
-//         aTexCoordLocation: aBackTexCoordLocation
-//         };
-// }
+export function drawBackground(gl: WebGL2RenderingContext, program: ShaderProgram) {
+
+    program.use();
+
+    gl.disable(gl.DEPTH_TEST);
+    gl.disable(gl.BLEND)
+    gl.depthMask(false);
+
+    // program.setAttribute('aPositionLocation', 0, false);
+    // program.setAttribute('aTexCoordLocation', 1, false);
+
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.positionBuffer);
+    // gl.vertexAttribPointer(bgProg.positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
+    // gl.enableVertexAttribArray(bgProg.positionAttributeLocation);
+
+    // gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.texCoordBuffer);
+    // gl.vertexAttribPointer(bgProg.texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    // gl.enableVertexAttribArray(bgProg.texCoordAttributeLocation);
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND)
+    gl.depthMask(true);
+
+
+}

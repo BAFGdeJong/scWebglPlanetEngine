@@ -2,7 +2,7 @@
 
 import * as utils from './utils.ts';
 import { Color } from './utils.ts';
-import { planetProgram, ShaderProgram } from './programs.ts';
+import { backgroundProgram, planetProgram, ShaderProgram, drawBackground } from './programs.ts';
 import { TextureMap, Texture } from './textures.ts';
 
 
@@ -100,36 +100,6 @@ function planetEngine({
     // let atmosphereProg = atmosphereProgram(gl, program.program, atmosphereFragmentShaderSource, atmosphereVertexShaderSource);
     // let bgProgram = backgroundProgram(gl, program.program);
 
-    // function drawBackground(gl: any, current_program: any, bgProg: any) {
-    //     gl.disable(gl.DEPTH_TEST);
-    //     gl.disable(gl.BLEND)
-    //     gl.depthMask(false);
-
-    //     gl.useProgram(bgProg.program);
-
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.bgVertexBuffer);
-    //     gl.vertexAttribPointer(bgProg.aPositionLocation, 2, gl.FLOAT, false, 16, 0);
-    //     gl.enableVertexAttribArray(bgProg.aPositionLocation);
-    //     gl.vertexAttribPointer(bgProg.aTexCoordLocation, 2, gl.FLOAT, false, 16, 8);
-    //     gl.enableVertexAttribArray(bgProg.aTexCoordLocation);
-
-    //     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    //     gl.useProgram(current_program);
-    //     gl.enable(gl.DEPTH_TEST);
-    //     gl.depthMask(true);
-    //     gl.enable(gl.BLEND);
-
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.positionBuffer);
-    //     gl.vertexAttribPointer(bgProg.positionAttributeLocation, 3, gl.FLOAT, false, 0, 0);
-    //     gl.enableVertexAttribArray(bgProg.positionAttributeLocation);
-
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, bgProg.texCoordBuffer);
-    //     gl.vertexAttribPointer(bgProg.texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
-    //     gl.enableVertexAttribArray(bgProg.texCoordAttributeLocation);
-
-    // }
-
     function clearCanvas(gl: WebGL2RenderingContext) {
         // Clear the canvas and depth buffer
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -140,6 +110,8 @@ function planetEngine({
         position: [0, 0, cameraDistance], // Camera positioned along the negative Z-axis
         rotation: [0, 0, 0]   // No initial rotation
     };
+
+    let backgroundShaderProgram = backgroundProgram(gl, textureMap, textureBackgroundUrl);
 
     let planetShaderProgram = planetProgram(
         gl,
@@ -168,9 +140,9 @@ function planetEngine({
 
     let initMatrix = utils.createMat4();
 
-    planetShaderProgram.program.setUniform('uTotalProjectionMatrix', false, initMatrix);
-    planetShaderProgram.program.setUniform('uModelMatrix', false, initMatrix);
-    planetShaderProgram.program.setUniform('uTime', false, startTime);
+    planetShaderProgram.setUniform('uTotalProjectionMatrix', false, initMatrix);
+    planetShaderProgram.setUniform('uModelMatrix', false, initMatrix);
+    planetShaderProgram.setUniform('uTime', false, startTime);
 
     // const sphereTranslationLocation = gl.getUniformLocation(program.program, 'uSphereTranslation');
     // let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
@@ -185,10 +157,12 @@ function planetEngine({
 
         clearCanvas(gl);
 
-        // drawBackground(gl, program.program, bgProgram);
+        drawBackground(gl, backgroundShaderProgram);
+
+        planetShaderProgram.use();
 
         let currentTime = (performance.now() - startTime) / 1000;
-        planetShaderProgram.program.setUniform('uTime', currentTime);
+        planetShaderProgram.setUniform('uTime', currentTime);
 
         // May want to modify canvas dimensions later, thus is in render loop.
         let projectionMatrix = utils.createMat4();
@@ -220,14 +194,13 @@ function planetEngine({
         // translate(modelMatrix, modelMatrix, [0, 0, 0]);
 
         // Set the final model matrix for the planet (including rotation and translation)
-        planetShaderProgram.program.setUniform('uModelMatrix', false, modelMatrix);
+        planetShaderProgram.setUniform('uModelMatrix', false, modelMatrix);
     
         // Set the total projection matrix (projection * view)
-        planetShaderProgram.program.setUniform('uTotalProjectionMatrix', false, pv);
+        planetShaderProgram.setUniform('uTotalProjectionMatrix', false, pv);
 
         // Bind the index buffer and draw the sphere
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, planetShaderProgram.indexBuffer!);
-        gl.drawElements(gl.TRIANGLES, planetShaderProgram.sphere.indices.length, gl.UNSIGNED_SHORT, 0);
+        planetShaderProgram.drawObject('planet');
 
         // // Use the atmosphere shader program
         // gl.useProgram(atmosphereProg.program);
@@ -290,7 +263,7 @@ planetEngine({
     lightPosition: [0,1.0,0],
 
     // Planet geometry information
-    subdivisions: 128,
+    subdivisions: 32,
     radius: 1.0,
 
     // Camera information
