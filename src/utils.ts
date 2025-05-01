@@ -598,43 +598,37 @@ export function rotateX(out: any, a: any, rad: any) {
     return out;
 }
 
-// Create sphere geometry
 export function createSphere(subdivisions: number, radius: number) {
     const positions = [];
     const normals = [];
     const texCoords = [];
     const indices = [];
+    const normalLines = [];
 
     for (let lat = 0; lat <= subdivisions; lat++) {
-        const theta = (lat * Math.PI) / subdivisions; // Latitude angle (0 to π)
+        const theta = (lat * Math.PI) / subdivisions;
         const sinTheta = Math.sin(theta);
         const cosTheta = Math.cos(theta);
 
         for (let lon = 0; lon <= subdivisions; lon++) {
-            const phi = (lon * 2 * Math.PI) / subdivisions; // Longitude angle (0 to 2π)
+            const phi = (lon * 2 * Math.PI) / subdivisions;
             const sinPhi = Math.sin(phi);
             const cosPhi = Math.cos(phi);
 
-            // Calculate vertex position
             const x = radius * cosPhi * sinTheta;
             const y = radius * cosTheta;
             const z = radius * sinPhi * sinTheta;
 
-            // Calculate normal (same as position normalized)
-            const nx = cosPhi * sinTheta;
-            const ny = cosTheta;
-            const nz = sinPhi * sinTheta;
+            const length = Math.sqrt(x * x + y * y + z * z);
+            normals.push(x / length, y / length, z / length);
 
-            // Calculate texture coordinates
             const u = lon / subdivisions;
-            var v = lat / subdivisions;
+            let v = lat / subdivisions;
             if (lat === 0 || lat === subdivisions) {
-                // Apply a small offset at the poles to avoid exact overlap
-                v += 0.0001; // You can fine-tune this small value
+                v += 0.0001;
             }
 
             positions.push(x, y, z);
-            normals.push(nx, ny, nz);
             texCoords.push(u, v);
         }
     }
@@ -645,10 +639,22 @@ export function createSphere(subdivisions: number, radius: number) {
             const first = lat * (subdivisions + 1) + lon;
             const second = first + subdivisions + 1;
 
-            // Add triangles for the current quad
             indices.push(first, first + 1, second);
             indices.push(second, first + 1, second + 1);
         }
+    }
+
+    for (let i = 0; i < positions.length; i += 3) {
+        const px = positions[i];
+        const py = positions[i + 1];
+        const pz = positions[i + 2];
+
+        const nx = normals[i];
+        const ny = normals[i + 1];
+        const nz = normals[i + 2];
+
+        normalLines.push(px, py, pz);
+        normalLines.push(px + nx * 0.1, py + ny * 0.1, pz + nz * 0.1);
     }
 
     return {
@@ -656,6 +662,7 @@ export function createSphere(subdivisions: number, radius: number) {
         normals: new Float32Array(normals),
         texCoords: new Float32Array(texCoords),
         indices: new Uint16Array(indices),
+        normalLines: new Float32Array(normalLines),
     };
 }
 

@@ -4,24 +4,16 @@ export class TextureMap {
     private minId: number = 0;
 
     constructor() {
-
-        this.map = new Map<number, Texture>();
         for (let i = this.minId; i < this.maxTextures; i++) {
             this.map.set(i, null!);
         }
-
     }
 
     loadTexture(newTexture: Texture) {
-
         newTexture.load();
-
     }
 
     assign(program: WebGLProgram, newTexture: Texture) {
-
-        // TODO Improve algorithm to find the longest in use texture and replace it with the new one.
-
         let longestInUse: Texture = newTexture;
 
         for (let [id, texture] of this.map) {
@@ -36,7 +28,6 @@ export class TextureMap {
             if (texture.getTimeInUse()! > longestInUse.getTimeInUse()!) {
                 longestInUse = texture;
             }
-
         }
 
         this.map.set(longestInUse.getId(), newTexture);
@@ -46,9 +37,7 @@ export class TextureMap {
         longestInUse.resetTimeInUse();
 
         newTexture.assign(program);
-
     }
-
 }
 
 export class Texture {
@@ -59,17 +48,15 @@ export class Texture {
     private location: WebGLUniformLocation | null;
     private programsUsing: WebGLProgram[];
     private timeInUse: number | null = null;
+    private textureObject: WebGLTexture | null = null;
 
     constructor(gl: WebGL2RenderingContext, uniformName: string, url: string) {
-
-
         this.gl = gl;
         this.uniformName = uniformName;
         this.url = url;
         this.id = -1;
         this.location = null;
         this.programsUsing = [];
-
     }
 
     getTimeInUse() {
@@ -77,7 +64,7 @@ export class Texture {
     }
 
     startTimeInUse() {
-        this.timeInUse = performance.now(); // Is time at initialization TODO make it a resetable timer
+        this.timeInUse = performance.now();
     }
 
     resetTimeInUse() {
@@ -97,38 +84,31 @@ export class Texture {
     }
 
     load() {
-
-        const texture = this.gl.createTexture();
+        this.textureObject = this.gl.createTexture();
         const image = new Image();
         image.src = this.url;
 
         image.onload = () => {
-
-            this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.textureObject);
             this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
             this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
             this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image);
             this.gl.generateMipmap(this.gl.TEXTURE_2D);
-
         };
-
     }
 
     assign(program: WebGLProgram) {
+        if (!this.textureObject) {
+            console.warn(`Texture for ${this.uniformName} not loaded yet.`);
+            return;
+        }
 
         this.location = this.gl.getUniformLocation(program, this.uniformName);
         this.gl.activeTexture(this.gl.TEXTURE0 + this.id);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.textureObject);
         this.gl.uniform1i(this.location, this.id);
-
         this.programsUsing.push(program);
-
     }
-
-    // deassign(program: WebGLProgram) { // TODO
-
-    //     this.location = this.gl.getUniformLocation(program, this.uniformName);
-
-    // }
 
 }

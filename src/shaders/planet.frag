@@ -22,4 +22,5 @@ void main() {
     vec4 cloudColor = tempCloudColor * uCloudColor;
 
     fragColor = mix(planetColor, cloudColor, cloudColor.a);
+    // fragColor = vec4(0.0, 0.0, 1.0, 1.0);
 }

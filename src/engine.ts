@@ -226,10 +226,6 @@ function planetEngine({
     
         // Set the total projection matrix (projection * view)
         planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uTotalProjectionMatrix', pv);
-    
-        console.log(planetShaderProgram.program.getUniforms());
-        console.log(planetShaderProgram.program.getAttributes());
-        console.log(planetShaderProgram.program.getTextures());
 
         // Bind the index buffer and draw the sphere
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, planetShaderProgram.indexBuffer!);
@@ -276,7 +272,7 @@ planetEngine({
     textureGlowIsCompressed: false,
 
     // Planet rotation information
-    rotation: 0.0,
+    rotation: 30.0,
     tilt: 30.0, // Degrees
     pitch: 45.0, // Degrees
 
@@ -296,7 +292,7 @@ planetEngine({
     lightPosition: [0,1.0,0],
 
     // Planet geometry information
-    subdivisions: 32,
+    subdivisions: 128,
     radius: 1.0,
 
     // Camera information
