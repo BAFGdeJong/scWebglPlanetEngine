@@ -153,8 +153,6 @@ function planetEngine({
         radius,
     );
 
-    console.log(planetShaderProgram);
-
     // const totalProjectionMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uTotalProjectionMatrix');
     // const modelMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uModelMatrix');
 
@@ -170,9 +168,9 @@ function planetEngine({
 
     let initMatrix = utils.createMat4();
 
-    planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uTotalProjectionMatrix', initMatrix);
-    planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uModelMatrix', initMatrix);
-    planetShaderProgram.program.createUniform(gl.uniform1f, 'uTime', startTime);
+    planetShaderProgram.program.setUniform('uTotalProjectionMatrix', false, initMatrix);
+    planetShaderProgram.program.setUniform('uModelMatrix', false, initMatrix);
+    planetShaderProgram.program.setUniform('uTime', false, startTime);
 
     // const sphereTranslationLocation = gl.getUniformLocation(program.program, 'uSphereTranslation');
     // let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
@@ -190,7 +188,7 @@ function planetEngine({
         // drawBackground(gl, program.program, bgProgram);
 
         let currentTime = (performance.now() - startTime) / 1000;
-        planetShaderProgram.program.updateUniform(gl.uniform1f, 'uTime', currentTime);
+        planetShaderProgram.program.setUniform('uTime', currentTime);
 
         // May want to modify canvas dimensions later, thus is in render loop.
         let projectionMatrix = utils.createMat4();
@@ -222,10 +220,10 @@ function planetEngine({
         // translate(modelMatrix, modelMatrix, [0, 0, 0]);
 
         // Set the final model matrix for the planet (including rotation and translation)
-        planetShaderProgram.program.updateUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uModelMatrix', modelMatrix);
+        planetShaderProgram.program.setUniform('uModelMatrix', false, modelMatrix);
     
         // Set the total projection matrix (projection * view)
-        planetShaderProgram.program.createUniform((location: any, data: any) => gl.uniformMatrix4fv(location, false, data), 'uTotalProjectionMatrix', pv);
+        planetShaderProgram.program.setUniform('uTotalProjectionMatrix', false, pv);
 
         // Bind the index buffer and draw the sphere
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, planetShaderProgram.indexBuffer!);
@@ -272,7 +270,7 @@ planetEngine({
     textureGlowIsCompressed: false,
 
     // Planet rotation information
-    rotation: 30.0,
+    rotation: 10.0,
     tilt: 30.0, // Degrees
     pitch: 45.0, // Degrees
 
@@ -286,7 +284,7 @@ planetEngine({
 
     // Planet clouds information
     cloudColor: new Color(235,240,250,225),
-    cloudRotation: 5.0,
+    cloudRotation: 15.0,
 
     // Lighting information
     lightPosition: [0,1.0,0],

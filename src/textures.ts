@@ -39,7 +39,7 @@ export class TextureMap {
         newTexture.assign(program);
     }
 }
-
+// TODO use uniform API instead of texture API to assign textures to programs
 export class Texture {
     private gl: WebGL2RenderingContext;
     private uniformName: string;

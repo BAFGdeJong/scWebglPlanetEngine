@@ -1,144 +1,96 @@
 import * as utils from './utils.js';
-import { importShader } from './shaders.ts';
+import { ShaderMap, Shader, Uniform, Attribute} from './shaders.ts';
 import { TextureMap, Texture } from './textures.ts';
 
-class ShaderUniform {
+class ProgramAttachedUniform {
 
     // TODO Cleanup garbage code.
 
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram;
-    private name: string;
+    private uniform: Uniform;
     private location: WebGLUniformLocation | null = null;
 
-    constructor(gl: WebGL2RenderingContext, program: WebGLProgram, name: string) {
+    constructor(gl: WebGL2RenderingContext, program: WebGLProgram, uniform: Uniform) {
         this.gl = gl;
         this.program = program;
-        this.name = name;
-        this.location = this.getUniformLocation(name);
+        this.uniform = uniform;
+        this.attachUniform();
     }
 
-    getName() {
-        return this.name;
-    }
+    private attachUniform() {
 
-    createUniform(
-        uniformFunc: (location: WebGLUniformLocation, data: any) => void,
-        name: string,
-        data: any
-    ){
-        let location = this.getUniformLocation(name);
-        this.setUniform(uniformFunc, location!, data);
-    }
+        this.location = this.gl.getUniformLocation(this.program, this.uniform.getName());
 
-    private getUniformLocation(name: string): WebGLUniformLocation | null {
-
-        let location = this.gl.getUniformLocation(this.program, name);
-
-        if (!location) {
-
-            console.error(`Uniform location not found for ${name}`);
-            return null;
-
+        if (this.location === null) {
+            console.error(`Uniform location not found for ${this.uniform.getName()}`);
+            return;
         }
 
-        return location;
-
     }
 
-    private setUniform(
-        uniformFunc: (location: WebGLUniformLocation, data: any) => void,
-        location: WebGLUniformLocation,
-        data: any
-    ){
+    setUniform(
+        ...args: any[]
+    ) {
 
-        uniformFunc.call(this.gl, location, data);
+        this.uniform.getCallFunction().call(this.gl, this.location, ...args);
 
     }
 }
 
-class ShaderAttribute {
+class ProgramAttachedAttribute {
 
     // TODO Cleanup garbage code.
 
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram;
-    private name: string;
+    private attribute: Attribute;
     private location: number | null = null;
     private buffer: WebGLBuffer | null = null;
 
     constructor(
         gl: WebGL2RenderingContext, 
         program: WebGLProgram, 
-        name: string,
-        data: any,
-        dataSize: number,
-        type: number,
-        normalized: boolean,
-        stride: number,
-        offset: number
+        attribute: Attribute,
+        // data: any,
+        // dataSize: number,
+        // type: number,
+        // normalized: boolean,
+        // stride: number,
+        // offset: number
     ) {
         this.gl = gl;
         this.program = program;
-        this.name = name;
-        this.location, this.buffer = this.createAttribute(name, data, dataSize, type, normalized, stride, offset);
+        this.attribute = attribute;
+        this.attachAttribute();
     }
 
-    getName() {
-        return this.name;
+    private attachAttribute() {
+        this.buffer = this.gl.createBuffer();
     }
 
-    setBuffer(data: any) {
+    setAttribute(data: any, amount: number, normalized: boolean) {
+
+        this.location = this.gl.getAttribLocation(this.program, this.attribute.getName());
+        if (this.location === -1) {
+            console.error(`Attribute ${this.attribute.getName()} not found in the shader program.`);
+            return;
+        }
+    
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
         this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
-    }
 
-    createAttribute(name: string, data: any, dataSize: number, type: number, normalized: boolean, stride: number, offset: number) {
+        this.gl.vertexAttribPointer(
+            this.location,
+            this.attribute.getSize(),
+            this.attribute.getType(),
+            normalized,
+            0, // Only needed for interleaved arrays, using 1 buffer per attribute
+            0 // Only needed for interleaved arrays, using 1 buffer per attribute
+        );
 
-        let buffer = this.createBuffer(data);
-        let loc = this.setupAttribute(name);
+        this.gl.enableVertexAttribArray(this.location); // TODO Error handling
 
-        this.gl.vertexAttribPointer(loc, dataSize, type, normalized, stride, offset);
-
-        return {
-            buffer: buffer,
-            location: loc
-        }
-
-    }
-
-    private createBuffer(data: any) {
-
-        let buffer = this.gl.createBuffer();
-        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
-
-        return buffer;
-
-    }
-
-    private getAttributeLocation(name: string): number {
-
-        let location = this.gl.getAttribLocation(this.program, name);
-        
-        if (location === -1) {
-
-            console.error(`Attribute location not found for ${name}`);
-
-        }
-
-        return location;
-
-    }
-
-    private enableAttribute(location: number) {
-        this.gl.enableVertexAttribArray(location);
-    }
-
-    private setupAttribute(name: string): number {
-        let location = this.getAttributeLocation(name);
-        this.enableAttribute(location);
-        return location;
     }
 
 }
@@ -156,23 +108,42 @@ class ShaderAttribute {
 export class ShaderProgram {
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram;
-    private vertexShader: WebGLShader;
-    private fragmentShader: WebGLShader;
-    private uniforms: Map<string, ShaderUniform> = new Map();
-    private attributes: Map<string, ShaderAttribute> = new Map();
-    private textures: Map<Number, Texture> = new Map();
+    private vertexShader: Shader;
+    private fragmentShader: Shader;
+    private attachedUniforms: Map<string, ProgramAttachedUniform> = new Map(); // TODO Could have duplicate uniform names in different shaders
+    private attachedAttributes: Map<string, ProgramAttachedAttribute> = new Map();
+
+    // private textures: Map<Number, Texture> = new Map();
 
     constructor(gl: WebGL2RenderingContext, vertexShader: string, fragmentShader: string) {
         this.gl = gl;
-        this.vertexShader = importShader(gl, vertexShader);
-        this.fragmentShader = importShader(gl, fragmentShader);
+        this.vertexShader = new Shader(gl, ShaderMap, vertexShader);
+        this.fragmentShader = new Shader(gl, ShaderMap, fragmentShader);
         this.program = gl.createProgram();
-        gl.attachShader(this.program, this.vertexShader);
-        gl.attachShader(this.program, this.fragmentShader);
+
+        this.vertexShader.attachShader(this.program);
+        this.fragmentShader.attachShader(this.program);
+
         gl.linkProgram(this.program);
 
         if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
             console.error('Program linking error:', gl.getProgramInfoLog(this.program));
+        }
+
+        for (let [name, uniform] of this.vertexShader.getUniforms()) {
+            this.attachedUniforms.set(name, new ProgramAttachedUniform(gl, this.program, uniform));
+        }
+
+        for (let [name, attribute] of this.vertexShader.getAttributes()) {
+            this.attachedAttributes.set(name, new ProgramAttachedAttribute(gl, this.program, attribute));
+        }
+
+        for (let [name, uniform] of this.fragmentShader.getUniforms()) {
+            this.attachedUniforms.set(name, new ProgramAttachedUniform(gl, this.program, uniform));
+        }
+
+        for (let [name, attribute] of this.vertexShader.getAttributes()) {
+            this.attachedAttributes.set(name, new ProgramAttachedAttribute(gl, this.program, attribute));
         }
 
     }
@@ -185,60 +156,28 @@ export class ShaderProgram {
         return this.program;
     }
 
-    // addAttribute(ShaderAttribute: ShaderAttribute) {
-    //     this.attributes.set(ShaderAttribute.getName(), ShaderAttribute);
-    // }
+    setUniform(name: string, ...args: any[]) {
+        let uniform = this.attachedUniforms.get(name);
+        if (uniform) {
+            uniform.setUniform(...args);
+        } else {
+            console.error(`Uniform ${name} not found in program`);
+        }
 
-    getAttributes() {
-        return this.attributes;
     }
 
-    createAttribute(name: string, data: any, dataSize: number, type: number, normalized: boolean, stride: number, offset: number) {
-        this.use();
-        let sa = new ShaderAttribute(this.gl, this.program, name, data, dataSize, type, normalized, stride, offset);
-        this.attributes.set(sa.getName(), sa);
-    }
-
-    updateAttribute(name: string, data: any) {
-        this.use();
-        let sa = this.attributes.get(name);
-        sa?.setBuffer(data); // TODO Error handling
-    }
-
-    getUniforms() {
-        return this.uniforms;
-    }
-
-    getTextures() {
-        return this.textures;
-    }
-
-    addTexture(textureMap: TextureMap, texture: Texture) {
-        this.use();
+    loadTexture(textureMap: TextureMap, texture: Texture) {
         textureMap.loadTexture(texture);
         textureMap.assign(this.program, texture);
-        this.textures.set(texture.getId(), texture);
     }
 
-    createUniform(
-        uniformFunc: (location: WebGLUniformLocation, data: any) => void,
-        name: string,
-        data: any
-    ) {
-        this.use();
-        let su = new ShaderUniform(this.gl, this.program, name);
-        su.createUniform(uniformFunc, name, data);
-        this.uniforms.set(su.getName(), su);
-    }
-
-    updateUniform(
-        uniformFunc: (location: WebGLUniformLocation, data: any) => void,
-        name: string,
-        data: any
-    ) {
-        this.use();
-        let su = this.uniforms.get(name);
-        su?.createUniform(uniformFunc, name, data); // TODO Error handling
+    setAttribute(name: string, data: any, amount: number, normalized: boolean) {
+        let attribute = this.attachedAttributes.get(name);
+        if (attribute) {
+            attribute.setAttribute(data, amount, normalized);
+        } else {
+            console.error(`Attribute ${name} not found in program`);
+        }
     }
 
 }
@@ -260,54 +199,22 @@ export function planetProgram(
 
     // Create sphere geometry
     let sphere = utils.createSphere(subdivisions, radius);
-
-    program.createAttribute(
-        'aPosition',
-        sphere.positions,
-        3,
-        gl.FLOAT,
-        false,
-        0,
-        0
-    );
-
-    program.createAttribute(
-        'aTexCoord',
-        sphere.texCoords,
-        2,
-        gl.FLOAT,
-        false,
-        0,
-        0
-    );
+    program.setAttribute('aPosition', sphere.positions, 3, false);
+    program.setAttribute('aTexCoord', sphere.texCoords, 2, false);
 
     let planetTexture = new Texture(gl, 'uTexturePlanet', planetTextureUrl);
-    program.addTexture(textureMap, planetTexture);
+    program.loadTexture(textureMap, planetTexture);
     // textureMap.loadTexture(planetTexture);
     // textureMap.assign(program.getProgram(), planetTexture);
 
     let cloudTexture = new Texture(gl, 'uTextureCloud', cloudTextureUrl);
-    program.addTexture(textureMap, cloudTexture);
+    program.loadTexture(textureMap, cloudTexture);
     // textureMap.loadTexture(cloudTexture);
     // textureMap.assign(program.getProgram(), cloudTexture);
 
-    program.createUniform(
-        gl.uniform4fv,
-        'uPlanetColor',
-        planetColor.get_normalized_rgba()
-    );
-
-    program.createUniform(
-        gl.uniform1f,
-        'uCloudRotation',
-        cloudRotation * Math.PI / 180
-    );
-
-    program.createUniform(
-        gl.uniform4fv,
-        'uCloudColor',
-        cloudColor.get_normalized_rgba()
-    );
+    program.setUniform('uPlanetColor', planetColor.get_normalized_rgba());
+    program.setUniform('uCloudRotation', cloudRotation * Math.PI / 180);
+    program.setUniform('uCloudColor', cloudColor.get_normalized_rgba());
 
     // let lightPositionLocation = gl.getUniformLocation(program, 'uLightPosition');
     // let lightDirectionLocation = gl.getUniformLocation(program, 'uLightDirection');
