@@ -130,10 +130,6 @@ export class ShaderProgram {
             console.error('Program linking error:', gl.getProgramInfoLog(this.program));
         }
 
-        for (let [name, uniform] of this.vertexShader.getUniforms()) {
-            this.attachedUniforms.set(name, new ProgramAttachedUniform(gl, this.program, uniform));
-        }
-
         for (let [name, attribute] of this.vertexShader.getAttributes()) {
             this.attachedAttributes.set(name, new ProgramAttachedAttribute(gl, this.program, attribute));
         }
@@ -142,8 +138,8 @@ export class ShaderProgram {
             this.attachedUniforms.set(name, new ProgramAttachedUniform(gl, this.program, uniform));
         }
 
-        for (let [name, attribute] of this.vertexShader.getAttributes()) {
-            this.attachedAttributes.set(name, new ProgramAttachedAttribute(gl, this.program, attribute));
+        for (let [name, uniform] of this.vertexShader.getUniforms()) {
+            this.attachedUniforms.set(name, new ProgramAttachedUniform(gl, this.program, uniform));
         }
 
     }
@@ -202,15 +198,8 @@ export function planetProgram(
     program.setAttribute('aPosition', sphere.positions, 3, false);
     program.setAttribute('aTexCoord', sphere.texCoords, 2, false);
 
-    let planetTexture = new Texture(gl, 'uTexturePlanet', planetTextureUrl);
-    program.loadTexture(textureMap, planetTexture);
-    // textureMap.loadTexture(planetTexture);
-    // textureMap.assign(program.getProgram(), planetTexture);
-
-    let cloudTexture = new Texture(gl, 'uTextureCloud', cloudTextureUrl);
-    program.loadTexture(textureMap, cloudTexture);
-    // textureMap.loadTexture(cloudTexture);
-    // textureMap.assign(program.getProgram(), cloudTexture);
+    program.loadTexture(textureMap, new Texture(gl, 'uTexturePlanet', planetTextureUrl));
+    program.loadTexture(textureMap, new Texture(gl, 'uTextureCloud', cloudTextureUrl));
 
     program.setUniform('uPlanetColor', planetColor.get_normalized_rgba());
     program.setUniform('uCloudRotation', cloudRotation * Math.PI / 180);
