@@ -143,6 +143,16 @@ class ShaderAttribute {
 
 }
 
+/**
+* 
+* Creates a shader program from vertex and fragment shaders.
+*
+* @param {WebGL2RenderingContext} gl - The WebGL context.
+* @param {string} vertexShader - Name of the file to import.
+* @param {string} fragmentShader - Name of the file to import.
+* @returns {ShaderProgram} - The compiled shader.
+* 
+*/
 export class ShaderProgram {
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram;
