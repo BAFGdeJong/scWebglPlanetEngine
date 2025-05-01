@@ -69,7 +69,7 @@ class ProgramAttachedAttribute {
         this.buffer = this.gl.createBuffer();
     }
 
-    setAttribute(data: any, amount: number, normalized: boolean) {
+    setAttribute(data: any, normalized: boolean) {
 
         this.location = this.gl.getAttribLocation(this.program, this.attribute.getName());
         if (this.location === -1) {
@@ -167,10 +167,10 @@ export class ShaderProgram {
         textureMap.assign(this.program, texture);
     }
 
-    setAttribute(name: string, data: any, amount: number, normalized: boolean) {
+    setAttribute(name: string, data: any, normalized: boolean) {
         let attribute = this.attachedAttributes.get(name);
         if (attribute) {
-            attribute.setAttribute(data, amount, normalized);
+            attribute.setAttribute(data, normalized);
         } else {
             console.error(`Attribute ${name} not found in program`);
         }
@@ -195,8 +195,8 @@ export function planetProgram(
 
     // Create sphere geometry
     let sphere = utils.createSphere(subdivisions, radius);
-    program.setAttribute('aPosition', sphere.positions, 3, false);
-    program.setAttribute('aTexCoord', sphere.texCoords, 2, false);
+    program.setAttribute('aPosition', sphere.positions, false);
+    program.setAttribute('aTexCoord', sphere.texCoords, false);
 
     program.loadTexture(textureMap, new Texture(gl, 'uTexturePlanet', planetTextureUrl));
     program.loadTexture(textureMap, new Texture(gl, 'uTextureCloud', cloudTextureUrl));
