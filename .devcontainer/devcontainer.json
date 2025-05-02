@@ -3,7 +3,7 @@
     "image": "mcr.microsoft.com/devcontainers/base:debian",
     "features": {
         "ghcr.io/devcontainers-extra/features/npm-packages:1": {
-            "packages": "vite, terser"
+            "packages": "vite@5.4.19, terser@5.39.0"
         }
     }
 }
