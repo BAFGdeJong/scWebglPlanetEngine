@@ -2,9 +2,6 @@
     "name": "my-project-devcontainer",
     "image": "mcr.microsoft.com/devcontainers/base:debian",
     "features": {
-        "ghcr.io/devcontainers-extra/features/npm-package": {},
-        "ghcr.io/devcontainers/features/node": {},
-        "ghcr.io/devcontainers-extra/features/typescript:2": {},
         "ghcr.io/devcontainers-extra/features/npm-packages:1": {
             "packages": "vite, terser"
         }
