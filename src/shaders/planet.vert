@@ -1,6 +1,5 @@
 #version 300 es
-// #pragma vscode_glsllint_stage: vert
-    
+
 in vec3 aPosition;
 in vec2 aTexCoord;
 in vec3 aNormal;
