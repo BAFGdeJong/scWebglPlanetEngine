@@ -734,3 +734,11 @@ export class Color {
     }
 
 }
+
+
+export function getFileExtension(filename: string): string {
+
+    const match = filename.match(/\.([a-zA-Z0-9]+)$/);
+    return match ? match[1] : '';
+
+}

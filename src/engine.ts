@@ -4,7 +4,26 @@ import * as utils from './utils.ts';
 import { Color } from './utils.ts';
 import { backgroundProgram, planetProgram, ShaderProgram, drawBackground } from './programs.ts';
 import { TextureMap, Texture } from './textures.ts';
+import { ShaderManager } from './shaders.ts';
 
+// TODO glob deprecated
+const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
+// const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: '?raw', eager: true }) as Record<string, string>; << Code doesn't work because it becomes a object.
+
+export const ShaderMap: Record<string, string> = (() => {
+    
+    let tempShaderMap: Record<string, string> = {};
+
+    for (let path in shaderFiles) {
+
+        let fileName = path.split('/').pop()!;
+        tempShaderMap[fileName] = shaderFiles[path];
+    
+    }
+
+    return tempShaderMap;
+
+})();
 
 function planetEngine({
     texturePlanetUrl = 'null',
@@ -68,6 +87,12 @@ function planetEngine({
     gl = gl!
 
     gl.viewport(0, 0, canvas.width, canvas.height);
+
+    let shaderManager = new ShaderManager(gl);
+
+    shaderManager.createShaderPackage('planet', ShaderMap['planet.vert'], ShaderMap['planet.frag']);
+
+    console.log(shaderManager);
 
     let textureMap = new TextureMap();
 
