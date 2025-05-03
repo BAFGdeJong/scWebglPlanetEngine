@@ -2,9 +2,9 @@
 
 import * as utils from './utils.ts';
 import { Color } from './utils.ts';
-import { backgroundProgram, planetProgram, ShaderProgram, drawBackground } from './programs.ts';
+import { backgroundProgram, planetProgram, ShaderProgram, drawBackground } from './shaderprogrammanager.ts';
 import { TextureMap, Texture } from './textures.ts';
-import { ShaderManager } from './shaders.ts';
+import { ShaderManager } from './shadermanager.ts';
 
 // TODO glob deprecated
 const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
@@ -91,8 +91,8 @@ function planetEngine({
     let shaderManager = new ShaderManager(gl);
 
     shaderManager.createShaderPackage('planet', ShaderMap['planet.vert'], ShaderMap['planet.frag']);
-
-    console.log(shaderManager);
+    shaderManager.createProgram('planet', 'planet');
+    shaderManager.createProgram('mars', 'planet');
 
     let textureMap = new TextureMap();
 
