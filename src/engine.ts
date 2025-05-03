@@ -115,12 +115,12 @@ function planetEngine({
     // const totalProjectionMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uTotalProjectionMatrix');
     // const modelMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uModelMatrix');
 
-    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);
-    gl.disable(gl.BLEND);
+    gl.enable(gl.BLEND);
     // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive blending for glow
-    gl.disable(gl.CULL_FACE);
+    gl.enable(gl.CULL_FACE);
 
     // Add time uniform to the render loop
     let startTime = performance.now();
