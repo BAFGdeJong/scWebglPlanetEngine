@@ -41,8 +41,8 @@ void main() {
     float angleToSurface = acos(dot(lightToSurface, normalize(uLightDirection)));
     float spot = smoothstep(uLightOuterCutoff, uLightInnerCutoff, angleToSurface);
 
-    float rawBrightness = diffuse * spot * 2.0;
-    float brightness = max(rawBrightness, 0.4);
+    float rawBrightness = diffuse * spot * 1.0;
+    float brightness = max(rawBrightness, 1.0);
 
     vec3 litColor = blendedColor.rgb * brightness; // Dunno why, but this fixes lighting transparancy problem.
 

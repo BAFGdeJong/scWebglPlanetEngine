@@ -153,6 +153,13 @@ function planetEngine({
     let cloudsTexture = textureLoader.load(textureCloudUrl);
     let backGroundTexture = textureLoader.load(textureBackgroundUrl);
 
+    /**
+    * 
+    * Clears the canvas.
+    * 
+    * @param {string} gl - WebGL2RenderingContext
+    * 
+    */
     function clearCanvas(gl: WebGL2RenderingContext) {
         // Clear the canvas and depth buffer
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -225,13 +232,8 @@ function planetEngine({
         camera.radius += e.deltaY * 0.01 * zoomSpeed;
     
         // Clamp to prevent flipping through center or going too far
-        camera.radius = Math.max(radius + 1, Math.min(camera.radius, 100));
-    });
-
-    // window.addEventListener('mousemove', onMouseMove);
-    // window.addEventListener('mousedown', onMouseDown);
-    // window.addEventListener('mouseup', onMouseUp);
-    
+        camera.radius = Math.max(radius + 1, Math.min(camera.radius, 5));
+    });    
 
     setGlSettings(gl);
     let startTime = getCurrentTime();
@@ -251,7 +253,7 @@ function planetEngine({
         shaderManager.assignTexture(gl.getUniformLocation(shaderManager.getProgram('background')!, 'uTextureBackground')!, backGroundTexture, 2);
         background.render();
 
-        let currentTime = (performance.now() - startTime) / 1000;
+        let currentTime = (getCurrentTime() - startTime) / 1000;
 
         let projectionMatrix = utils.createMat4();        
         utils.perspective(projectionMatrix, fov, canvas.width / canvas.height, 0.00001, 100);
@@ -272,7 +274,7 @@ function planetEngine({
         sphere.setShaderProgram('planet');
         sphere.setModelMatrix(
             [0, 0, 0],
-            [(tilt * utils.rads) * isPlanetRotating, currentTime * ((rotation * utils.rads) * 0.7) * isPlanetRotating, (pitch * utils.rads) * isPlanetRotating],
+            [tilt * utils.rads, currentTime * (rotation * isPlanetRotating * utils.rads) * 0.7, pitch * utils.rads],
             [1, 1, 1]
         );
         // console.log('position', sphere.getLocalPosition());
@@ -293,8 +295,8 @@ function planetEngine({
         let lightOuterLocation = gl.getUniformLocation(planetShader!, 'uLightOuterCutoff');
 
         gl.uniform3fv(lightPositionLocation, lightPosition);        // Example light position
-        gl.uniform3fv(lightDirectionLocation, [0.0, 0.0, 50000.0]);       // Example direction
-        gl.uniform1f(lightInnerLocation, utils.radians(80.0));         // Inner cone angle in radians
+        gl.uniform3fv(lightDirectionLocation, [0.0, 0.0, 1.0]);       // Example direction
+        gl.uniform1f(lightInnerLocation, utils.radians(45.0));         // Inner cone angle in radians
         gl.uniform1f(lightOuterLocation, utils.radians(90.0));         // Outer cone angle in radians
         sphere.render();
 
@@ -305,9 +307,9 @@ function planetEngine({
 
 planetEngine({
     // Planet texturing information
-    texturePlanetUrl: '/textures/arid.jpg',
+    texturePlanetUrl: '/textures/planet_terran01.jpg',
     texturePlanetIsCompressed: false,
-    textureCloudUrl: '/textures/clouds_desert01.png',
+    textureCloudUrl: '/textures/clouds_banded01.png',
     textureCloudIsCompressed: false,
     textureBackgroundUrl: '/textures/background6.jpg',
     textureBackgroundIsCompressed: false,
@@ -316,8 +318,8 @@ planetEngine({
 
     // Planet rotation information
     rotation: 10.0,
-    // tilt: 30.0, // Degrees
-    // pitch: 45.0, // Degrees
+    tilt: 160.0, // Degrees
+    pitch: -30.0, // Degrees
 
     // Planet color information
     planetColor: new Color(255,255,255,255),
@@ -329,7 +331,7 @@ planetEngine({
 
     // Planet clouds information
     cloudColor: new Color(255,255,255,255),
-    cloudRotation: 15.0,
+    cloudRotation: -15.0,
 
     // Lighting information
     lightPosition: [0,5,0],
