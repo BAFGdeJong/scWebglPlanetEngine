@@ -43,6 +43,14 @@ export class ShaderManager {
 
     }
 
+    getAttributes(shaderPackageName: string) { // TODO easy way to get this name from program.
+        this.shaderPackages.get(shaderPackageName)?.attributes;
+    }
+
+    getUniforms(shaderPackageName: string) {
+        this.shaderPackages.get(shaderPackageName)?.uniforms;
+    }
+
     getProgram(programName: string): WebGLProgram | undefined {
         return this.programs.get(programName);
     }
@@ -81,8 +89,14 @@ export class ShaderManager {
         if (!vertexShader || !fragmentShader) {return} // TODO log
         this.gl.shaderSource(vertexShader, vertexSource);
         this.gl.compileShader(vertexShader);
+        if (!this.gl.getShaderParameter(vertexShader, this.gl.COMPILE_STATUS)) {
+            console.error('Vertex shader compile error:', this.gl.getShaderInfoLog(vertexShader));
+        }
         this.gl.shaderSource(fragmentShader, fragmentSource);
         this.gl.compileShader(fragmentShader);
+        if (!this.gl.getShaderParameter(fragmentShader, this.gl.COMPILE_STATUS)) {
+            console.error('Fragment shader compile error:', this.gl.getShaderInfoLog(fragmentShader));
+        }
 
         let tempProgram = this.gl.createProgram();
         this.gl.attachShader(tempProgram, vertexShader);
