@@ -4,7 +4,7 @@ import * as utils from './utils.ts';
 import { Color } from './utils.ts';
 import { ShaderManager } from './shadermanager.ts';
 import { SphereObject } from './objectstorage.ts';
-import { TextureLoader } from './textures.ts';
+import { TextureLoader } from './textureloader.ts';
 
 // TODO glob deprecated
 const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
@@ -64,13 +64,6 @@ function planetEngine({
     // Camera information
     cameraDistance = 1.0,
 
-    // textureCloudsUrl,
-    // sunColor,
-    // sunSize,
-    // sunPosition,
-    // sunIntensity,
-    // sunDistance,
-
 }) {
 
     // Minimal rendering setup for createSphere
@@ -94,11 +87,9 @@ function planetEngine({
     shaderManager.createProgram('planet', 'planet');
 
     let textureLoader = new TextureLoader(gl);
-    let textu = textureLoader.load(texturePlanetUrl);
-
-    // let k = new Texture(gl, 'uTexturePlanet', 'texturePlanetUrl')
-    // textureMap.loadTexture(k);
-    // textureMap.assign(shaderManager.getProgram('planet')!, k);
+    let planetTexture = textureLoader.load(texturePlanetUrl);
+    let cloudsTexture = textureLoader.load(textureCloudUrl);
+    let backGroundTexture = textureLoader.load(textureCloudUrl);
 
     function clearCanvas(gl: WebGL2RenderingContext) {
         // Clear the canvas and depth buffer
@@ -139,9 +130,6 @@ function planetEngine({
 
         let currentTime = (performance.now() - startTime) / 1000;
 
-        let planetShader = shaderManager.getProgram('planet');
-        gl.uniform1f(gl.getUniformLocation(planetShader!, 'uTime'), currentTime);        
-
         // May want to modify canvas dimensions later, thus is in render loop.
         let projectionMatrix = utils.createMat4();
         utils.perspective(projectionMatrix, fov, canvas.width / canvas.height, 0.00001, 100);
@@ -170,25 +158,18 @@ function planetEngine({
         utils.multiply(modelMatrix, tempMatrix, rotationX);   // Then pitch around X if needed
 
         // translate(modelMatrix, modelMatrix, [0, 0, 0]);
-
         sphere.setShaderProgram('planet');
         sphere.setBuffers();
+        let planetShader = shaderManager.getProgram('planet');
+        gl.uniform1f(gl.getUniformLocation(planetShader!, 'uTime'), currentTime);
         gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uModelMatrix'), false, modelMatrix);
         gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uTotalProjectionMatrix'), false, pv);
-        textureLoader.assign(gl.getUniformLocation(shaderManager.getProgram('planet')!, 'uModelMatrix')!, textu, 0);
-
+        gl.uniform1f(shaderManager.getUniformLocation(planetShader!, 'uCloudRotation'), cloudRotation * Math.PI / 180);
+        gl.uniform4fv(gl.getUniformLocation(planetShader!, 'uCloudColor'), cloudColor.get_normalized_rgba());
+        gl.uniform4fv(gl.getUniformLocation(planetShader!, 'uPlanetColor'), planetColor.get_normalized_rgba());
+        shaderManager.assignTexture(gl.getUniformLocation(shaderManager.getProgram('planet')!, 'uTexturePlanet')!, planetTexture, 0);
+        shaderManager.assignTexture(gl.getUniformLocation(shaderManager.getProgram('planet')!, 'uTextureCloud')!, cloudsTexture, 1);
         sphere.render();
-
-        // console.log('sphere ', sphere, 'shader manager ', shaderManager);
-
-        // // Set the final model matrix for the planet (including rotation and translation)
-        // planetShaderProgram.setUniform('uModelMatrix', false, modelMatrix);
-    
-        // // Set the total projection matrix (projection * view)
-        // planetShaderProgram.setUniform('uTotalProjectionMatrix', false, pv);
-
-        // // Bind the index buffer and draw the sphere
-        // planetShaderProgram.drawObject('planet');
 
         requestAnimationFrame(render.bind(null, gl));
     }

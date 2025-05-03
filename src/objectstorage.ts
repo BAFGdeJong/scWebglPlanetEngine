@@ -1,4 +1,4 @@
-import { ShaderManager } from "./shadermanager";
+import { ShaderManager, ProgramPackage } from "./shadermanager";
 
 type objectBuffer = {
     buffer: WebGLBuffer,
@@ -10,10 +10,13 @@ export class SphereObject {
 
     private gl: WebGL2RenderingContext;
     private shaderManager: ShaderManager;
-    private currentProgram: WebGLProgram | null = null;
+    private currentProgramPackage: ProgramPackage | null = null;
 
     private data: Record<string, any> = {};
     private vao: WebGLVertexArrayObject | null = null;
+    private possibleAttributes: Array<string> = [
+        "aPosition", "aTexCoord", "aNormal", "aIndices", "aNormalLines"
+    ]
     private buffers: Record<string, objectBuffer> = {};
 
     constructor(gl: WebGL2RenderingContext, shaderManager: ShaderManager, radius: number, subdivisions: number) {
@@ -35,11 +38,11 @@ export class SphereObject {
     }
 
     setShaderProgram(programName: string) {
-        let program = this.shaderManager.getProgram(programName);
+        let program = this.shaderManager.getProgramPackage(programName);
 
         if (program) {
-            this.currentProgram = program;
-            this.gl.useProgram(program);
+            this.currentProgramPackage = program;
+            this.gl.useProgram(program.program);
         } else {
             console.warn(`Shader program ${programName} no found`);
         }
@@ -58,11 +61,13 @@ export class SphereObject {
 
     setBuffers() {
 
-        if (!this.currentProgram) return; // TODO logging
+        if (!this.currentProgramPackage?.program) return; // TODO logging
+        // let attri = this.currentProgramPackage.shaderPackage.attributes;
+        // let unifs = this.currentProgramPackage.shaderPackage.uniforms;
 
-        let aPositionLocation  = this.gl.getAttribLocation(this.currentProgram, "aPosition");
-        let aTexCoordLocation  = this.gl.getAttribLocation(this.currentProgram, "aTexCoord"); // TODO not good to hardcode, good enough for now.
-        let aNormalLocation    = this.gl.getAttribLocation(this.currentProgram, "aNormal"); // Needs to be other way, Where we check if object has the shaders var.
+        let aPositionLocation  = this.gl.getAttribLocation(this.currentProgramPackage.program, "aPosition");
+        let aTexCoordLocation  = this.gl.getAttribLocation(this.currentProgramPackage.program, "aTexCoord"); // TODO not good to hardcode, good enough for now.
+        let aNormalLocation    = this.gl.getAttribLocation(this.currentProgramPackage.program, "aNormal"); // Needs to be other way, Where we check if object has the shaders var.
 
         if (aPositionLocation === -1 || aTexCoordLocation === -1 || aNormalLocation === -1) {
             console.error("Shader attributes missing.");
@@ -98,9 +103,9 @@ export class SphereObject {
     }
 
     render() {
-        if (!this.data.indices || !this.currentProgram || !this.vao) {
+        if (!this.data.indices || !this.currentProgramPackage || !this.vao) {
             console.log("Indices:", this.data.indices);
-            console.log("Program:", this.currentProgram);
+            console.log("Program:", this.currentProgramPackage);
             console.log("VAO:", this.vao);
             console.error('ERROR: Missing required resources.');
             return;
@@ -112,30 +117,29 @@ export class SphereObject {
     }
 
     private createSphere(subdivisions: number, radius: number) {
-        const positions = [];
-        const normals = [];
-        const texCoord = [];
-        const indices = [];
-        const normalLines = [];
+        let positions = [];
+        let normals = [];
+        let texCoord = [];
+        let indices = [];
+        let normalLines = [];
     
         for (let lat = 0; lat <= subdivisions; lat++) {
-            const theta = (lat * Math.PI) / subdivisions;
-            const sinTheta = Math.sin(theta);
-            const cosTheta = Math.cos(theta);
+            let theta = (lat * Math.PI) / subdivisions;
+            let sinTheta = Math.sin(theta);
+            let cosTheta = Math.cos(theta);
     
             for (let lon = 0; lon <= subdivisions; lon++) {
-                const phi = (lon * 2 * Math.PI) / subdivisions;
-                const sinPhi = Math.sin(phi);
-                const cosPhi = Math.cos(phi);
+                let phi = (lon * 2 * Math.PI) / subdivisions;
+                let sinPhi = Math.sin(phi);
+                let cosPhi = Math.cos(phi);
+                let x = radius * cosPhi * sinTheta;
+                let y = radius * cosTheta;
+                let z = radius * sinPhi * sinTheta;
     
-                const x = radius * cosPhi * sinTheta;
-                const y = radius * cosTheta;
-                const z = radius * sinPhi * sinTheta;
-    
-                const length = Math.sqrt(x * x + y * y + z * z);
+                let length = Math.sqrt(x * x + y * y + z * z);
                 normals.push(x / length, y / length, z / length);
     
-                const u = lon / subdivisions;
+                let u = lon / subdivisions;
                 let v = lat / subdivisions;
                 if (lat === 0 || lat === subdivisions) {
                     v += 0.0001;
@@ -149,8 +153,8 @@ export class SphereObject {
         // Generate indices
         for (let lat = 0; lat < subdivisions; lat++) {
             for (let lon = 0; lon < subdivisions; lon++) {
-                const first = lat * (subdivisions + 1) + lon;
-                const second = first + subdivisions + 1;
+                let first = lat * (subdivisions + 1) + lon;
+                let second = first + subdivisions + 1;
     
                 indices.push(first, first + 1, second);
                 indices.push(second, first + 1, second + 1);
@@ -158,13 +162,13 @@ export class SphereObject {
         }
     
         for (let i = 0; i < positions.length; i += 3) {
-            const px = positions[i];
-            const py = positions[i + 1];
-            const pz = positions[i + 2];
+            let px = positions[i];
+            let py = positions[i + 1];
+            let pz = positions[i + 2];
     
-            const nx = normals[i];
-            const ny = normals[i + 1];
-            const nz = normals[i + 2];
+            let nx = normals[i];
+            let ny = normals[i + 1];
+            let nz = normals[i + 2];
     
             normalLines.push(px, py, pz);
             normalLines.push(px + nx * 0.1, py + ny * 0.1, pz + nz * 0.1);

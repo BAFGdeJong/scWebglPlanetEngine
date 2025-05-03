@@ -9,7 +9,7 @@
 */
 export class ShaderManager {
     private gl: WebGL2RenderingContext;
-    private programs: Map<String, WebGLProgram> = new Map();
+    private programPackages: Map<String, ProgramPackage> = new Map();
     private shaderPackages: Map<string, ShaderPackage> = new Map();
 
     constructor(gl: WebGL2RenderingContext) {
@@ -39,21 +39,33 @@ export class ShaderManager {
             throw `Could not compile WebGL program. \n\n${info}`;
         }
 
-        this.programs.set(programName, program);
+        this.programPackages.set(programName, {
+            name: programName,
+            program: program,
+            shaderPackage: shaderPackage
+        });
 
     }
 
-    getAttributes(shaderPackageName: string) { // TODO easy way to get this name from program.
-        this.shaderPackages.get(shaderPackageName)?.attributes;
+    getAttributes(programName: string) { // TODO error handling
+        return this.programPackages.get(programName)?.shaderPackage.attributes;
     }
 
-    getUniforms(shaderPackageName: string) {
-        this.shaderPackages.get(shaderPackageName)?.uniforms;
+    getUniforms(programName: string) { // TODO error handling
+        return this.programPackages.get(programName)?.shaderPackage.uniforms;
     }
 
-    getProgram(programName: string): WebGLProgram | undefined {
-        return this.programs.get(programName);
+    getProgram(programName: string): WebGLProgram | undefined { // TODO error handling
+        return this.programPackages.get(programName)?.program;
     }
+
+    getProgramPackage(programName: string) { // TODO error handling
+        return this.programPackages.get(programName);
+    }
+
+    // getProgramName(program: WebgL) { MAYBE DO THIS??
+
+    // }
 
     useProgram(programName: string): void {
         let program = this.getProgram(programName);
@@ -68,7 +80,7 @@ export class ShaderManager {
 
         if (program) {
             this.gl.deleteProgram(program);
-            this.programs.delete(programName);
+            this.programPackages.delete(programName);
         } // TODO error handling and logging
 
     }
@@ -130,6 +142,16 @@ export class ShaderManager {
 
     }
 
+    getUniformLocation(program: WebGLProgram, uniformName: string) {
+        return this.gl.getUniformLocation(program, uniformName);
+    }
+
+    assignTexture(uniformLocation: WebGLUniformLocation, textureObject: WebGLTexture, id: number) {
+        this.gl.activeTexture(this.gl.TEXTURE0 + id);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, textureObject);
+        this.gl.uniform1i(uniformLocation, id);
+    }
+
     /**
     * 
     * Deletes the shader package (including shaders).
@@ -158,6 +180,11 @@ export class ShaderManager {
 
 }
 
+export type ProgramPackage = {
+    name: string;
+    program: WebGLProgram;
+    shaderPackage: ShaderPackage;
+}
 
 type ShaderPackage = {
     fragShader: WebGLShader;
