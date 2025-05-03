@@ -12,7 +12,9 @@ uniform mat4 uModelMatrix;
 
 void main() {
     vNormal = aNormal;
-    
+    vTexCoord = aTexCoord;
+    vPosition = aPosition;
+
     // Apply translation and transformation to get the world position
     vec3 translatedPosition = aPosition + uSphereTranslation;
     vec4 worldPosition = uModelMatrix * vec4(translatedPosition, 1.0);  // Transform to world space

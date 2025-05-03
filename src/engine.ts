@@ -108,12 +108,12 @@ function planetEngine({
     // const totalProjectionMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uTotalProjectionMatrix');
     // const modelMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uModelMatrix');
 
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthMask(true);
+    // gl.enable(gl.DEPTH_TEST);
+    // gl.depthMask(true);
     gl.enable(gl.BLEND);
-    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     // gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive blending for glow
-    gl.enable(gl.CULL_FACE);
+    // gl.enable(gl.CULL_FACE);
 
     // Add time uniform to the render loop
     let startTime = performance.now();
@@ -177,6 +177,15 @@ function planetEngine({
         gl.uniform4fv(gl.getUniformLocation(planetShader!, 'uPlanetColor'), planetColor.get_normalized_rgba());
         shaderManager.assignTexture(gl.getUniformLocation(shaderManager.getProgram('planet')!, 'uTexturePlanet')!, planetTexture, 0);
         shaderManager.assignTexture(gl.getUniformLocation(shaderManager.getProgram('planet')!, 'uTextureCloud')!, cloudsTexture, 1);
+        let lightPositionLocation = gl.getUniformLocation(planetShader!, 'uLightPosition');
+        let lightDirectionLocation = gl.getUniformLocation(planetShader!, 'uLightDirection');
+        let lightInnerLocation = gl.getUniformLocation(planetShader!, 'uLightInnerCutoff');
+        let lightOuterLocation = gl.getUniformLocation(planetShader!, 'uLightOuterCutoff');
+
+        gl.uniform3fv(lightPositionLocation, lightPosition);        // Example light position
+        gl.uniform3fv(lightDirectionLocation, [0.0, 0.0, 50000.0]);       // Example direction
+        gl.uniform1f(lightInnerLocation, utils.radians(80.0));         // Inner cone angle in radians
+        gl.uniform1f(lightOuterLocation, utils.radians(90.0));         // Outer cone angle in radians
         sphere.render();
 
         requestAnimationFrame(render.bind(null, gl));
@@ -188,9 +197,9 @@ planetEngine({
     // Planet texturing information
     texturePlanetUrl: '/textures/arid.jpg',
     texturePlanetIsCompressed: false,
-    textureCloudUrl: '/textures/clouds_banded01.png',
+    textureCloudUrl: '/textures/clouds_desert01.png',
     textureCloudIsCompressed: false,
-    textureBackgroundUrl: '/textures/background2.jpg',
+    textureBackgroundUrl: '/textures/background6.jpg',
     textureBackgroundIsCompressed: false,
     textureAtmosphereUrl: '',
     textureAtmosphereIsCompressed: false,
@@ -199,8 +208,8 @@ planetEngine({
 
     // Planet rotation information
     rotation: 10.0,
-    tilt: 30.0, // Degrees
-    pitch: 45.0, // Degrees
+    // tilt: 30.0, // Degrees
+    // pitch: 45.0, // Degrees
 
     // Planet color information
     planetColor: new Color(255,255,255,255),
@@ -211,11 +220,11 @@ planetEngine({
     atmosphereThicknessMin: 0.0,
 
     // Planet clouds information
-    cloudColor: new Color(235,240,250,225),
+    cloudColor: new Color(255,255,255,255),
     cloudRotation: 15.0,
 
     // Lighting information
-    lightPosition: [0,1.0,0],
+    lightPosition: [0,5,0],
 
     // Planet geometry information
     subdivisions: 32,
