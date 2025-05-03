@@ -19,6 +19,7 @@ void main() {
     vec3 viewDir = normalize(vPosition - uPlanetCenter);
     vec3 normal = normalize(vNormal);
 
+
     // Calculate the distance from the planet's center
     float dist = length(vPosition - uPlanetCenter);
 
