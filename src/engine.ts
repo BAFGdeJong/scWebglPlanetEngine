@@ -177,17 +177,11 @@ function planetEngine({
     let camera = {
         position: [0, 0, cameraDistance],
         rotation: [0, 0, 0],
-        radius: 10,
+        radius: radius + cameraDistance,
         azimuth: 0,
         elevation: 0,
         speed: 0.02
     };
-
-    // function updateViewMatrix() {
-    //     let viewMatrix = utils.createMat4();
-    //     utils.lookAt(viewMatrix, camera.position, [0, 0, 0], [0, 1, 0]);
-    //     return viewMatrix;
-    // }
 
     let keysPressed: any = {};
 
@@ -231,7 +225,7 @@ function planetEngine({
         camera.radius += e.deltaY * 0.01 * zoomSpeed;
     
         // Clamp to prevent flipping through center or going too far
-        camera.radius = Math.max(1, Math.min(camera.radius, 100));
+        camera.radius = Math.max(radius + 1, Math.min(camera.radius, 100));
     });
 
     // window.addEventListener('mousemove', onMouseMove);
