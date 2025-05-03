@@ -1,4 +1,5 @@
 import { ShaderManager, ProgramPackage } from "./shadermanager";
+import { createMat4, translate, rotate, rotateX, rotateY, rotateZ, scale } from "./utils";
 
 type objectBuffer = {
     buffer: WebGLBuffer,
@@ -16,7 +17,10 @@ export class BackgroundObject {
     private vao: WebGLVertexArrayObject | null = null;
     private buffers: Record<string, objectBuffer> = {};
 
-    constructor(gl: WebGL2RenderingContext, shaderManager: ShaderManager) {
+    constructor(
+        gl: WebGL2RenderingContext,
+        shaderManager: ShaderManager,
+    ) {
         this.gl = gl;
         this.shaderManager = shaderManager;
 
@@ -140,10 +144,19 @@ export class SphereObject {
     //     "aPosition", "aTexCoord", "aNormal", "aIndices", "aNormalLines"
     // ]
     private buffers: Record<string, objectBuffer> = {};
+    
+    private modelMatrix: any[] | Float32Array<ArrayBuffer>;
 
-    constructor(gl: WebGL2RenderingContext, shaderManager: ShaderManager, radius: number, subdivisions: number) {
+    constructor(
+        gl: WebGL2RenderingContext,
+        shaderManager: ShaderManager,
+        radius: number,
+        subdivisions: number,
+        modelMatrix: any[] | Float32Array<ArrayBuffer>,
+    ) {
         this.gl = gl;
         this.shaderManager = shaderManager;
+        this.modelMatrix = modelMatrix;
 
         this.createSphere(subdivisions, radius);
 
@@ -169,6 +182,56 @@ export class SphereObject {
             console.warn(`Shader program ${programName} not found`);
         }
 
+    }
+
+    setModelMatrix(
+        position: [number, number, number],
+        rotation: [number, number, number],
+        scaleO: [number, number, number]
+    ) {
+        // T translation transform
+        // R rotation transform
+        // S scale transform
+        // this.modelMatrix = T * R * S;
+
+        this.modelMatrix = createMat4();
+
+        translate(this.modelMatrix, this.modelMatrix, position);
+        rotateZ(this.modelMatrix, this.modelMatrix, rotation[2]);
+        rotateY(this.modelMatrix, this.modelMatrix, rotation[1]);
+        rotateX(this.modelMatrix, this.modelMatrix, rotation[0]);
+        scale(this.modelMatrix, this.modelMatrix, scaleO);
+        
+    }
+
+    getLocalRotation() {
+        // Extract the rotation part of the model matrix (top-left 3x3 submatrix)
+        let m = this.modelMatrix;
+        
+        return {
+            x: Math.atan2(m[6], m[10]), // Rotation around X axis
+            y: Math.atan2(-m[2], Math.sqrt(m[6] * m[6] + m[10] * m[10])), // Rotation around Y axis
+            z: Math.atan2(m[1], m[0])  // Rotation around Z axis
+        };
+    }
+
+    getLocalScale() {
+        // Extract the scale from the diagonal of the 3x3 matrix (no skewing)
+        let m = this.modelMatrix;
+        
+        return {
+            x: Math.sqrt(m[0] * m[0] + m[1] * m[1] + m[2] * m[2]), // Scale factor along X
+            y: Math.sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6]), // Scale factor along Y
+            z: Math.sqrt(m[8] * m[8] + m[9] * m[9] + m[10] * m[10]) // Scale factor along Z
+        };
+    }
+
+    getLocalPosition() {
+        return {
+            x: this.modelMatrix[12],
+            y: this.modelMatrix[13],
+            z: this.modelMatrix[14],
+        };
     }
 
     private bind(bufferName: string) {
@@ -228,6 +291,8 @@ export class SphereObject {
             console.error('ERROR: Missing required resources.');
             return;
         }
+
+        this.gl.uniformMatrix4fv(this.gl.getUniformLocation(this.currentProgramPackage.program!, 'uModelMatrix'), false, this.modelMatrix);
 
         this.gl.bindVertexArray(this.vao);
         this.gl.drawElements(this.gl.TRIANGLES, this.data.indices.length, this.gl.UNSIGNED_SHORT, 0);

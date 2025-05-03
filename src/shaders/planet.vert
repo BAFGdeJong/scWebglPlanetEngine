@@ -6,7 +6,7 @@ in vec3 aNormal;
 out vec3 vNormal;
 out vec3 vPosition;
 out vec2 vTexCoord;
-uniform mat4 uTotalProjectionMatrix;
+uniform mat4 uProjectionMatrix;
 uniform vec3 uSphereTranslation;
 uniform mat4 uModelMatrix;
 
@@ -22,5 +22,5 @@ void main() {
     vPosition = worldPosition.xyz;  // Pass the world position to the fragment shader
     
     vTexCoord = aTexCoord;
-    gl_Position = uTotalProjectionMatrix * uModelMatrix * vec4(translatedPosition, 1.0);
+    gl_Position = uProjectionMatrix * uModelMatrix * vec4(translatedPosition, 1.0);
 }

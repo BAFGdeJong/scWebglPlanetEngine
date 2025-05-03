@@ -10,6 +10,8 @@ import { TextureLoader } from './textureloader.ts';
 const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
 // const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: '?raw', eager: true }) as Record<string, string>; << Code doesn't work because it becomes a object.
 
+
+// TODO this can be better, calculate before sending to wiki
 export const ShaderMap: Record<string, string> = (() => {
     
     let tempShaderMap: Record<string, string> = {};
@@ -26,33 +28,54 @@ export const ShaderMap: Record<string, string> = (() => {
 })();
 
 function planetEngine({
+    // Meta data
+    isStar = false,
+    isBlackHole = false,
+    isGasGiant = false,
+    isNebulaCenter = false,
+    isPulsar = false,
+    isUseReverseLightForGlow = false,
+
+    // Texture urls
     texturePlanetUrl = 'null',
     texturePlanetIsCompressed = false,
     textureCloudUrl = 'null',
     textureCloudIsCompressed = false,
     textureBackgroundUrl = 'null',
     textureBackgroundIsCompressed = false,
-    textureAtmosphereUrl = 'null',
-    textureAtmosphereIsCompressed = false,
+    textureCorona = 'null',
+    textureCoronaIsCompressed = false,
+    // textureAtmosphereUrl = 'null',
+    // textureAtmosphereIsCompressed = false, Probably not used ingame anymore
+    textureShieldUrl = 'null',
+    textureShieldIsCompressed = false,
     textureGlowUrl = 'null',
     textureGlowIsCompressed = false,
 
     // Planet rotation information
-    rotation = 0.0,
-    tilt = 0.0,
-    pitch = 0.0,
+    rotation = 0.0, // Float
+    tilt = 0.0, // Float
+    pitch = 0.0, // Float
 
     // Planet color information
-    planetColor = new Color(0.0, 0.0, 0.0, 1.0),
+    planetColor = new Color(0.0, 0.0, 0.0, 1.0), 
 
     // Planet atmosphere information
     atmosphereColor = new Color(0.0, 0.0, 0.0, 1.0),
     atmosphereThickness = 0.0,
-    atmosphereThicknessMin = 0.0,   
+    atmosphereThicknessMin = 0.0,
 
     // Planet clouds information
     cloudColor = new Color(0.0, 0.0, 0.0, 0.0),
     cloudRotation = 0.0,
+
+    // Corona information
+    coronaSize = 0, // Float
+    coronaColor = new Color(0.0,0.0,0.0,0.0),
+
+    // Shield information
+    shieldColor = new Color(0.0,0.0,0.0,0.0),
+    shieldThickness = 0.0, // Float
 
     // Light information
     lightPosition = [0.0, 0.0, 1.0],
@@ -64,31 +87,68 @@ function planetEngine({
     // Camera information
     cameraDistance = 1.0,
 
+    // GL settings
+    canvasWidth = 0,
+    canvasHeight = 0,
+
+    // // Missing
+
+    // void addTag(String tag)
+    
+    // String getAOrAn()
+ 
+    // String getDescriptionId()
+ 
+    // Color getGlowColor()
+ 
+    // Color getIconColor()
+ 
+    // String getIconTexture()
+ 
+    // String getName()
+ 
+    // String getPlanetType()
+ 
+    // float getScaleMultMapIcon()
+ 
+    // float getScaleMultStarscapeIcon()
+ 
+    // Color getShieldColor()
+ 
+    // String getStarscapeIcon()
+ 
+    // Set<String> getTags()
+ 
+    // boolean isDoNotShowInCombat()
+    
+    // boolean isUseReverseLightForGlow()
+
 }) {
 
     // Minimal rendering setup for createSphere
     let canvas = document.createElement('canvas');
-    canvas.width = 500;
-    canvas.height = 500;
-    document.body.appendChild(canvas);
 
     let gl = canvas.getContext('webgl2', { antialias: true });
     if (!gl) {
         console.error('WebGL2 not supported');
+        return
     }
 
-    gl = gl!
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+
+    document.body.appendChild(canvas);
 
     gl.viewport(0, 0, canvas.width, canvas.height);
 
     let shaderManager = new ShaderManager(gl);
+    let textureLoader = new TextureLoader(gl);
 
     shaderManager.createShaderPackage('planet', ShaderMap['planet.vert'], ShaderMap['planet.frag']);
     shaderManager.createShaderPackage('background', ShaderMap['background.vert'], ShaderMap['background.frag']);
     shaderManager.createProgram('planet', 'planet');
     shaderManager.createProgram('background', 'background');
 
-    let textureLoader = new TextureLoader(gl);
     let planetTexture = textureLoader.load(texturePlanetUrl);
     let cloudsTexture = textureLoader.load(textureCloudUrl);
     let backGroundTexture = textureLoader.load(textureBackgroundUrl);
@@ -99,37 +159,98 @@ function planetEngine({
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
 
-    const camera = {
-        position: [0, 0, cameraDistance], // Camera positioned along the negative Z-axis
-        rotation: [0, 0, 0]   // No initial rotation
+    function setGlSettings(gl: WebGL2RenderingContext) {
+        // gl.enable(gl.DEPTH_TEST);
+        // gl.depthMask(true);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        // gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive blending for glow
+        // gl.enable(gl.CULL_FACE);
+    }
+
+    function moveCamera() {
+
+    }
+
+    function getCurrentTime() { return performance.now(); }
+
+    let camera = {
+        position: [0, 0, cameraDistance],
+        rotation: [0, 0, 0],
+        radius: 10,
+        azimuth: 0,
+        elevation: 0,
+        speed: 0.02
     };
 
+    // function updateViewMatrix() {
+    //     let viewMatrix = utils.createMat4();
+    //     utils.lookAt(viewMatrix, camera.position, [0, 0, 0], [0, 1, 0]);
+    //     return viewMatrix;
+    // }
 
-    // const totalProjectionMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uTotalProjectionMatrix');
-    // const modelMatrixLocation = gl.getUniformLocation(planetShaderProgram.getProgram(), 'uModelMatrix');
+    let keysPressed: any = {};
 
-    // gl.enable(gl.DEPTH_TEST);
-    // gl.depthMask(true);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive blending for glow
-    // gl.enable(gl.CULL_FACE);
+    let isPlanetRotating = 1;
 
-    // Add time uniform to the render loop
-    let startTime = performance.now();
+    window.addEventListener('keydown', (event: any) => {
+        keysPressed[event.key] = true;
+    });
+    
+    window.addEventListener('keyup', (event: any) => {
+        keysPressed[event.key] = false;
 
-    let initMatrix = utils.createMat4();
+        if (event.key === ' ' || event.key === 'Space') {
+            if (isPlanetRotating) {
+                isPlanetRotating = 0;
+            } else {
+                isPlanetRotating = 1;
+            }
+        }
+    });
+    
+    function handleKeyboardInput() {
+        if (keysPressed['a'] || keysPressed['A']) {
+            camera.azimuth -= camera.speed;
+        }
+        if (keysPressed['d'] || keysPressed['D']) {
+            camera.azimuth += camera.speed;
+        }
+        if (keysPressed['w'] || keysPressed['W']) {
+            camera.elevation = Math.min(camera.elevation + camera.speed, Math.PI / 2 - 0.01);
+        }
+        if (keysPressed['s'] || keysPressed['S']) {
+            camera.elevation = Math.max(camera.elevation - camera.speed, -Math.PI / 2 + 0.01);
+        }
+    }
 
-    // const sphereTranslationLocation = gl.getUniformLocation(program.program, 'uSphereTranslation');
-    // let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
-    let fov = Math.PI * 0.25
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+    
+        const zoomSpeed = 0.5;
+        camera.radius += e.deltaY * 0.01 * zoomSpeed;
+    
+        // Clamp to prevent flipping through center or going too far
+        camera.radius = Math.max(1, Math.min(camera.radius, 100));
+    });
+
+    // window.addEventListener('mousemove', onMouseMove);
+    // window.addEventListener('mousedown', onMouseDown);
+    // window.addEventListener('mouseup', onMouseUp);
+    
+
+    setGlSettings(gl);
+    let startTime = getCurrentTime();
+    let fov = Math.PI * 0.25;
 
     let background = new BackgroundObject(gl, shaderManager);
-    let sphere = new SphereObject(gl, shaderManager, 1, 32);
+    let sphere = new SphereObject(gl, shaderManager, 1, 32, utils.createMat4());
 
     function render(gl: WebGL2RenderingContext) {
 
         clearCanvas(gl);
+
+        handleKeyboardInput();
 
         background.setShaderProgram('background');
         background.setBuffers();
@@ -138,40 +259,35 @@ function planetEngine({
 
         let currentTime = (performance.now() - startTime) / 1000;
 
-        // May want to modify canvas dimensions later, thus is in render loop.
-        let projectionMatrix = utils.createMat4();
+        let projectionMatrix = utils.createMat4();        
         utils.perspective(projectionMatrix, fov, canvas.width / canvas.height, 0.00001, 100);
-        
+
+        camera.position = [
+            camera.radius * Math.cos(camera.elevation) * Math.sin(camera.azimuth),
+            camera.radius * Math.sin(camera.elevation),
+            camera.radius * Math.cos(camera.elevation) * Math.cos(camera.azimuth)
+        ];
+
         let viewMatrix = utils.createMat4();
         utils.lookAt(viewMatrix, camera.position, [0, 0, 0], [0, 1, 0]);
 
-        let pv = utils.createMat4();
-        utils.multiply(pv, projectionMatrix, viewMatrix);
-    
-        let modelMatrix = utils.createMat4();
+        utils.multiply(projectionMatrix, projectionMatrix, viewMatrix);
 
-        // Create individual rotation matrices
-        let rotationZ = utils.createMat4();
-        let rotationY = utils.createMat4();
-        let rotationX = utils.createMat4();
-        
-        utils.rotateZ(rotationZ, rotationZ, tilt * utils.rads); // Apply tilt
-        
-        utils.rotateY(rotationY, rotationY, currentTime * ((rotation * utils.rads) * 0.7)); // Spin
-        utils.rotateX(rotationX, rotationX, pitch * utils.rads); // Optional pitch
-        
-        // Combine rotations
-        let tempMatrix = utils.createMat4();
-        utils.multiply(tempMatrix, rotationZ, rotationY);     // First tilt, then spin around tilted Y
-        utils.multiply(modelMatrix, tempMatrix, rotationX);   // Then pitch around X if needed
+        console.log("Camera Position", camera.position);
 
-        // translate(modelMatrix, modelMatrix, [0, 0, 0]);
         sphere.setShaderProgram('planet');
+        sphere.setModelMatrix(
+            [0, 0, 0],
+            [(tilt * utils.rads) * isPlanetRotating, currentTime * ((rotation * utils.rads) * 0.7) * isPlanetRotating, (pitch * utils.rads) * isPlanetRotating],
+            [1, 1, 1]
+        );
+        // console.log('position', sphere.getLocalPosition());
+        // console.log('rotation', sphere.getLocalRotation());
+        // console.log('scale', sphere.getLocalScale());
         sphere.setBuffers();
         let planetShader = shaderManager.getProgram('planet');
         gl.uniform1f(gl.getUniformLocation(planetShader!, 'uTime'), currentTime);
-        gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uModelMatrix'), false, modelMatrix);
-        gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uTotalProjectionMatrix'), false, pv);
+        gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uProjectionMatrix'), false, projectionMatrix);
         gl.uniform1f(shaderManager.getUniformLocation(planetShader!, 'uCloudRotation'), cloudRotation * Math.PI / 180);
         gl.uniform4fv(gl.getUniformLocation(planetShader!, 'uCloudColor'), cloudColor.get_normalized_rgba());
         gl.uniform4fv(gl.getUniformLocation(planetShader!, 'uPlanetColor'), planetColor.get_normalized_rgba());
@@ -201,8 +317,6 @@ planetEngine({
     textureCloudIsCompressed: false,
     textureBackgroundUrl: '/textures/background6.jpg',
     textureBackgroundIsCompressed: false,
-    textureAtmosphereUrl: '',
-    textureAtmosphereIsCompressed: false,
     textureGlowUrl: '',
     textureGlowIsCompressed: false,
 
@@ -232,6 +346,11 @@ planetEngine({
 
     // Camera information
     cameraDistance: 3,
+
+    // GL settings
+    canvasHeight: 500,
+    canvasWidth: 500,
+
 
 }); // Compression wip
 
