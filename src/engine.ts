@@ -4,6 +4,7 @@ import * as utils from './utils.ts';
 import { Color } from './utils.ts';
 import { ShaderManager } from './shadermanager.ts';
 import { SphereObject } from './objectstorage.ts';
+import { TextureLoader } from './textures.ts';
 
 // TODO glob deprecated
 const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
@@ -92,6 +93,13 @@ function planetEngine({
     shaderManager.createShaderPackage('planet', ShaderMap['planet.vert'], ShaderMap['planet.frag']);
     shaderManager.createProgram('planet', 'planet');
 
+    let textureLoader = new TextureLoader(gl);
+    let textu = textureLoader.load(texturePlanetUrl);
+
+    // let k = new Texture(gl, 'uTexturePlanet', 'texturePlanetUrl')
+    // textureMap.loadTexture(k);
+    // textureMap.assign(shaderManager.getProgram('planet')!, k);
+
     function clearCanvas(gl: WebGL2RenderingContext) {
         // Clear the canvas and depth buffer
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -130,7 +138,9 @@ function planetEngine({
         clearCanvas(gl);
 
         let currentTime = (performance.now() - startTime) / 1000;
-        // planetShaderProgram.setUniform('uTime', currentTime);
+
+        let planetShader = shaderManager.getProgram('planet');
+        gl.uniform1f(gl.getUniformLocation(planetShader!, 'uTime'), currentTime);        
 
         // May want to modify canvas dimensions later, thus is in render loop.
         let projectionMatrix = utils.createMat4();
@@ -163,9 +173,9 @@ function planetEngine({
 
         sphere.setShaderProgram('planet');
         sphere.setBuffers();
-        let planetShader = shaderManager.getProgram('planet');
         gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uModelMatrix'), false, modelMatrix);
         gl.uniformMatrix4fv(gl.getUniformLocation(planetShader!, 'uTotalProjectionMatrix'), false, pv);
+        textureLoader.assign(gl.getUniformLocation(shaderManager.getProgram('planet')!, 'uModelMatrix')!, textu, 0);
 
         sphere.render();
 

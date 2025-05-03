@@ -12,19 +12,9 @@ export class SphereObject {
     private shaderManager: ShaderManager;
     private currentProgram: WebGLProgram | null = null;
 
-    // private positions: Float32Array | null = null;
-    // private normals: Float32Array | null = null;
-    // private texCoords: Float32Array | null = null;
-    // private indices: Uint16Array | null = null;
-    // private normalLines: Float32Array | null = null;
     private data: Record<string, any> = {};
     private vao: WebGLVertexArrayObject | null = null;
     private buffers: Record<string, objectBuffer> = {};
-
-    // private positionsBuffer;
-    // private normalsBuffer;
-    // private texCoordsBuffer;
-    // private indicesBuffer;
 
     constructor(gl: WebGL2RenderingContext, shaderManager: ShaderManager, radius: number, subdivisions: number) {
         this.gl = gl;
@@ -34,10 +24,10 @@ export class SphereObject {
 
         this.buffers.positions = {buffer: this.gl.createBuffer(), bufferType: this.gl.ARRAY_BUFFER, usage: this.gl.STATIC_DRAW};
         this.buffers.normals = {buffer: this.gl.createBuffer(), bufferType: this.gl.ARRAY_BUFFER, usage: this.gl.STATIC_DRAW};
-        this.buffers.texCoords = {buffer: this.gl.createBuffer(), bufferType: this.gl.ARRAY_BUFFER, usage: this.gl.STATIC_DRAW};
+        this.buffers.texCoord = {buffer: this.gl.createBuffer(), bufferType: this.gl.ARRAY_BUFFER, usage: this.gl.STATIC_DRAW};
         this.buffers.indices = {buffer: this.gl.createBuffer(), bufferType: this.gl.ELEMENT_ARRAY_BUFFER, usage: this.gl.STATIC_DRAW};
 
-        if (!this.buffers.positions || !this.buffers.normals || !this.buffers.texCoords || !this.buffers.indices) {
+        if (!this.buffers.positions || !this.buffers.normals || !this.buffers.texCoord || !this.buffers.indices) {
             console.error('Failed to create a buffer');
             return;
         }
@@ -72,7 +62,7 @@ export class SphereObject {
 
         let aPositionLocation  = this.gl.getAttribLocation(this.currentProgram, "aPosition");
         let aTexCoordLocation  = this.gl.getAttribLocation(this.currentProgram, "aTexCoord"); // TODO not good to hardcode, good enough for now.
-        let aNormalLocation    = this.gl.getAttribLocation(this.currentProgram, "aNormal");
+        let aNormalLocation    = this.gl.getAttribLocation(this.currentProgram, "aNormal"); // Needs to be other way, Where we check if object has the shaders var.
 
         if (aPositionLocation === -1 || aTexCoordLocation === -1 || aNormalLocation === -1) {
             console.error("Shader attributes missing.");
@@ -86,13 +76,13 @@ export class SphereObject {
         this.gl.enableVertexAttribArray(aPositionLocation);
         this.gl.vertexAttribPointer(aPositionLocation, 3, this.gl.FLOAT, false, 0, 0); // < TODO this.gl.FLOAT can be automated, harcoded not good.
 
-        this.setBufferData('texCoords');
-        this.gl.enableVertexAttribArray(aPositionLocation);
-        this.gl.vertexAttribPointer(aPositionLocation, 2, this.gl.FLOAT, false, 0, 0); // < TODO this.gl.FLOAT can be automated, harcoded not good.
+        this.setBufferData('texCoord');
+        this.gl.enableVertexAttribArray(aTexCoordLocation);
+        this.gl.vertexAttribPointer(aTexCoordLocation, 2, this.gl.FLOAT, false, 0, 0); // < TODO this.gl.FLOAT can be automated, harcoded not good.
 
         this.setBufferData('normals');
-        this.gl.enableVertexAttribArray(aPositionLocation);
-        this.gl.vertexAttribPointer(aPositionLocation, 3, this.gl.FLOAT, false, 0, 0); // < TODO this.gl.FLOAT can be automated, harcoded not good.
+        this.gl.enableVertexAttribArray(aNormalLocation);
+        this.gl.vertexAttribPointer(aNormalLocation, 3, this.gl.FLOAT, false, 0, 0); // < TODO this.gl.FLOAT can be automated, harcoded not good.
 
         this.setBufferData('indices');
 
@@ -103,21 +93,9 @@ export class SphereObject {
 
     }
 
-    // getPositions() {
-    //     return this.positions;
-    // }
-    // getNormals() {
-    //     return this.normals;
-    // }
-    // getTexCoords() {
-    //     return this.texCoords;
-    // }
-    // getIndices() {
-    //     return this.indices;
-    // }
-    // getNormalLines() {
-    //     return this.normalLines;
-    // }
+    assignTexture() {
+
+    }
 
     render() {
         if (!this.data.indices || !this.currentProgram || !this.vao) {
@@ -136,7 +114,7 @@ export class SphereObject {
     private createSphere(subdivisions: number, radius: number) {
         const positions = [];
         const normals = [];
-        const texCoords = [];
+        const texCoord = [];
         const indices = [];
         const normalLines = [];
     
@@ -164,7 +142,7 @@ export class SphereObject {
                 }
     
                 positions.push(x, y, z);
-                texCoords.push(u, v);
+                texCoord.push(u, v);
             }
         }
     
@@ -194,7 +172,7 @@ export class SphereObject {
     
         this.data['positions'] = new Float32Array(positions);
         this.data['normals'] = new Float32Array(normals);
-        this.data['texCoords'] = new Float32Array(texCoords);
+        this.data['texCoord'] = new Float32Array(texCoord);
         this.data['indices'] = new Uint16Array(indices);
         this.data['normalLines'] = new Float32Array(normalLines);
     }
