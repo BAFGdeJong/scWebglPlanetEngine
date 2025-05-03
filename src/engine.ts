@@ -3,7 +3,7 @@
 import * as utils from './utils.ts';
 import { Color } from './utils.ts';
 import { ShaderManager } from './shadermanager.ts';
-import { SphereObject } from './objectstorage.ts';
+import { SphereObject, BackgroundObject } from './objectstorage.ts';
 import { TextureLoader } from './textureloader.ts';
 
 // TODO glob deprecated
@@ -84,12 +84,14 @@ function planetEngine({
     let shaderManager = new ShaderManager(gl);
 
     shaderManager.createShaderPackage('planet', ShaderMap['planet.vert'], ShaderMap['planet.frag']);
+    shaderManager.createShaderPackage('background', ShaderMap['background.vert'], ShaderMap['background.frag']);
     shaderManager.createProgram('planet', 'planet');
+    shaderManager.createProgram('background', 'background');
 
     let textureLoader = new TextureLoader(gl);
     let planetTexture = textureLoader.load(texturePlanetUrl);
     let cloudsTexture = textureLoader.load(textureCloudUrl);
-    let backGroundTexture = textureLoader.load(textureCloudUrl);
+    let backGroundTexture = textureLoader.load(textureBackgroundUrl);
 
     function clearCanvas(gl: WebGL2RenderingContext) {
         // Clear the canvas and depth buffer
@@ -110,7 +112,7 @@ function planetEngine({
     gl.depthMask(true);
     gl.enable(gl.BLEND);
     // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive blending for glow
+    // gl.blendFunc(gl.SRC_ALPHA, gl.ONE); // Additive blending for glow
     gl.enable(gl.CULL_FACE);
 
     // Add time uniform to the render loop
@@ -122,11 +124,17 @@ function planetEngine({
     // let sphereTranslation = [0.0, 0.0, 0.0]; // Initial position
     let fov = Math.PI * 0.25
 
+    let background = new BackgroundObject(gl, shaderManager);
     let sphere = new SphereObject(gl, shaderManager, 1, 32);
 
     function render(gl: WebGL2RenderingContext) {
 
         clearCanvas(gl);
+
+        background.setShaderProgram('background');
+        background.setBuffers();
+        shaderManager.assignTexture(gl.getUniformLocation(shaderManager.getProgram('background')!, 'uTextureBackground')!, backGroundTexture, 2);
+        background.render();
 
         let currentTime = (performance.now() - startTime) / 1000;
 
