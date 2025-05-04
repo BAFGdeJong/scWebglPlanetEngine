@@ -276,7 +276,7 @@ function planetEngine({
     let fov = Math.PI * 0.25;
 
     let background = new BackgroundObject(gl, shaderManager);
-    let sphere = new SphereObject(gl, shaderManager, 1, 32, utils.createMat4());
+    let sphere = new SphereObject(gl, shaderManager, 1, subdivisions, utils.createMat4());
 
     function render(gl: WebGL2RenderingContext) {
 
@@ -376,7 +376,7 @@ planetEngine({
     lightPosition: [0,5,0],
 
     // Planet geometry information
-    subdivisions: 8,
+    subdivisions: 2,
     radius: 1.0,
 
     // Camera information
