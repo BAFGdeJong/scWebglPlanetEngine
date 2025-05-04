@@ -172,6 +172,8 @@ function planetEngine({
     let dpr = window.devicePixelRatio || 1;
     canvas.width = canvasWidth * dpr;
     canvas.height = canvasHeight * dpr;
+    canvas.style.width = '160px';
+    canvas.style.height = '160px';
 
     document.body.appendChild(canvas);
 
@@ -383,8 +385,8 @@ planetEngine({
     cameraDistance: 1.9,
 
     // GL settings
-    canvasHeight: 160 * 4,
-    canvasWidth: 160 * 4,
+    canvasHeight: 160 * 8,
+    canvasWidth: 160 * 8,
 
 
 }); // Compression wip
