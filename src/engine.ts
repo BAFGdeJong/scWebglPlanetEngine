@@ -385,8 +385,8 @@ planetEngine({
     cameraDistance: 1.9,
 
     // GL settings
-    canvasHeight: 160 * 8,
-    canvasWidth: 160 * 8,
+    canvasHeight: 160 * 2, // Max at 8, min at 7
+    canvasWidth: 160 * 2, // Max at 8 min at 7
 
 
 }); // Compression wip
