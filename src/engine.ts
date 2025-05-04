@@ -343,7 +343,7 @@ function planetEngine({
 
 planetEngine({
     // Planet texturing information
-    texturePlanetUrl: '/textures/UV_checker_Map_byValle.jpg',
+    texturePlanetUrl: '/textures/arid.jpg',
     texturePlanetIsCompressed: false,
     textureCloudUrl: '/textures/clouds_banded01.png',
     textureCloudIsCompressed: false,
@@ -376,15 +376,15 @@ planetEngine({
     lightPosition: [0,5,0],
 
     // Planet geometry information
-    subdivisions: 2,
+    subdivisions: 32,
     radius: 1.0,
 
     // Camera information
     cameraDistance: 1.9,
 
     // GL settings
-    canvasHeight: 160,
-    canvasWidth: 160,
+    canvasHeight: 160 * 4,
+    canvasWidth: 160 * 4,
 
 
 }); // Compression wip
