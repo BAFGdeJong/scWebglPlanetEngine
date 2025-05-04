@@ -5,28 +5,62 @@ import { Color } from './utils.ts';
 import { ShaderManager } from './shadermanager.ts';
 import { SphereObject, BackgroundObject } from './objectstorage.ts';
 import { TextureLoader } from './textureloader.ts';
+import { ShaderMap } from './shadermap.ts';
 
-// TODO glob deprecated
-const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: 'raw', eager: true });
-// const shaderFiles = import.meta.glob('./shaders/*.{vert,frag}', { as: '?raw', eager: true }) as Record<string, string>; << Code doesn't work because it becomes a object.
-
-
-// TODO this can be better, calculate before sending to wiki
-export const ShaderMap: Record<string, string> = (() => {
-    
-    let tempShaderMap: Record<string, string> = {};
-
-    for (let path in shaderFiles) {
-
-        let fileName = path.split('/').pop()!;
-        tempShaderMap[fileName] = shaderFiles[path];
-    
-    }
-
-    return tempShaderMap;
-
-})();
-
+/**
+ * Initializes and renders a planet with optional features like atmosphere, corona, shield, and background.
+ * 
+ * @param isStar - Whether the object is a star.
+ * @param isBlackHole - Whether the object is a black hole.
+ * @param isGasGiant - Whether the object is a gas giant.
+ * @param isNebulaCenter - Whether the object is in the center of a nebula.
+ * @param isPulsar - Whether the object is a pulsar.
+ * @param isUseReverseLightForGlow - Whether to reverse light direction for glow effects.
+ * 
+ * @param texturePlanetUrl - URL to the planet texture.
+ * @param texturePlanetIsCompressed - Whether the planet texture is compressed.
+ * @param textureCloudUrl - URL to the cloud texture.
+ * @param textureCloudIsCompressed - Whether the cloud texture is compressed.
+ * @param textureBackgroundUrl - URL to the background texture.
+ * @param textureBackgroundIsCompressed - Whether the background texture is compressed.
+ * @param textureCorona - URL to the corona texture.
+ * @param textureCoronaIsCompressed - Whether the corona texture is compressed.
+ * @param textureShieldUrl - URL to the shield texture.
+ * @param textureShieldIsCompressed - Whether the shield texture is compressed.
+ * @param textureGlowUrl - URL to the glow texture.
+ * @param textureGlowIsCompressed - Whether the glow texture is compressed.
+ * 
+ * @param rotation - The rotation speed of the planet.
+ * @param tilt - The tilt angle of the planet.
+ * @param pitch - The pitch angle of the planet.
+ * 
+ * @param xPlanetPosition - Moves the planet to the + right or - left.
+ * 
+ * @param planetColor - Base color of the planet.
+ * @param atmosphereColor - Color of the atmosphere.
+ * @param atmosphereThickness - Thickness of the atmosphere.
+ * @param atmosphereThicknessMin - Minimum atmosphere thickness (for gradient effects).
+ * 
+ * @param cloudColor - Color of the clouds.
+ * @param cloudRotation - Rotation speed of the clouds.
+ * 
+ * @param coronaSize - Size of the corona effect.
+ * @param coronaColor - Color of the corona.
+ * 
+ * @param shieldColor - Color of the energy shield.
+ * @param shieldThickness - Thickness of the shield.
+ * 
+ * @param lightPosition - Position of the main light source (e.g., star).
+ * 
+ * @param subdivisions - Level of detail for the planet mesh (number of subdivisions).
+ * @param radius - Radius of the planet.
+ * 
+ * @param cameraDistance - Distance of the camera from the planet.
+ * 
+ * @param canvasWidth - Width of the WebGL canvas.
+ * @param canvasHeight - Height of the WebGL canvas.
+ * 
+ */
 function planetEngine({
     // Meta data
     isStar = false,
@@ -57,6 +91,9 @@ function planetEngine({
     tilt = 0.0, // Float
     pitch = 0.0, // Float
 
+    // Planet position information
+    xPlanetPosition = 0,
+
     // Planet color information
     planetColor = new Color(0.0, 0.0, 0.0, 1.0), 
 
@@ -71,10 +108,10 @@ function planetEngine({
 
     // Corona information
     coronaSize = 0, // Float
-    coronaColor = new Color(0.0,0.0,0.0,0.0),
+    coronaColor = new Color(0.0, 0.0, 0.0, 0.0),
 
     // Shield information
-    shieldColor = new Color(0.0,0.0,0.0,0.0),
+    shieldColor = new Color(0.0, 0.0, 0.0, 0.0),
     shieldThickness = 0.0, // Float
 
     // Light information
@@ -113,8 +150,6 @@ function planetEngine({
  
     // float getScaleMultStarscapeIcon()
  
-    // Color getShieldColor()
- 
     // String getStarscapeIcon()
  
     // Set<String> getTags()
@@ -134,8 +169,9 @@ function planetEngine({
         return
     }
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    let dpr = window.devicePixelRatio || 1;
+    canvas.width = canvasWidth * dpr;
+    canvas.height = canvasHeight * dpr;
 
     document.body.appendChild(canvas);
 
@@ -269,11 +305,11 @@ function planetEngine({
 
         utils.multiply(projectionMatrix, projectionMatrix, viewMatrix);
 
-        console.log("Camera Position", camera.position);
+        // console.log("Camera Position", camera.position);
 
         sphere.setShaderProgram('planet');
         sphere.setModelMatrix(
-            [0, 0, 0],
+            [xPlanetPosition, 0, 0],
             [tilt * utils.rads, currentTime * (rotation * isPlanetRotating * utils.rads) * 0.7, pitch * utils.rads],
             [1, 1, 1]
         );
@@ -307,11 +343,11 @@ function planetEngine({
 
 planetEngine({
     // Planet texturing information
-    texturePlanetUrl: '/textures/planet_terran01.jpg',
+    texturePlanetUrl: '/textures/UV_checker_Map_byValle.jpg',
     texturePlanetIsCompressed: false,
     textureCloudUrl: '/textures/clouds_banded01.png',
     textureCloudIsCompressed: false,
-    textureBackgroundUrl: '/textures/background6.jpg',
+    textureBackgroundUrl: '/textures/background2.jpg',
     textureBackgroundIsCompressed: false,
     textureGlowUrl: '',
     textureGlowIsCompressed: false,
@@ -320,6 +356,9 @@ planetEngine({
     rotation: 10.0,
     tilt: 160.0, // Degrees
     pitch: -30.0, // Degrees
+
+    // Planet position information
+    xPlanetPosition: 0,
 
     // Planet color information
     planetColor: new Color(255,255,255,255),
@@ -337,15 +376,15 @@ planetEngine({
     lightPosition: [0,5,0],
 
     // Planet geometry information
-    subdivisions: 32,
+    subdivisions: 8,
     radius: 1.0,
 
     // Camera information
-    cameraDistance: 3,
+    cameraDistance: 1.9,
 
     // GL settings
-    canvasHeight: 500,
-    canvasWidth: 500,
+    canvasHeight: 160,
+    canvasWidth: 160,
 
 
 }); // Compression wip

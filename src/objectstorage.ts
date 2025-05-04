@@ -117,6 +117,18 @@ export class BackgroundObject {
             return;
         }
 
+        let textureAspectRatio = 1.0;
+        let quadAspectRatio = this.gl.canvas.width / this.gl.canvas.height;
+
+        const textureAspectRatioLocation = this.gl.getUniformLocation(this.currentProgramPackage.program, "uTextureAspectRatio");
+        const quadAspectRatioLocation = this.gl.getUniformLocation(this.currentProgramPackage.program, "uQuadAspectRatio");
+
+        this.gl.uniform1f(textureAspectRatioLocation, textureAspectRatio);
+        this.gl.uniform1f(quadAspectRatioLocation, quadAspectRatio);
+
+        console.log(textureAspectRatio);
+        console.log('quad', quadAspectRatio);
+
         this.gl.disable(this.gl.DEPTH_TEST);
         this.gl.disable(this.gl.BLEND)
         this.gl.depthMask(false);
