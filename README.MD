@@ -4,6 +4,7 @@ Packages:
     `npm install typescript --save-dev`  
     `npm install terser -g`  
     `npm install vite --save-dev`  
+    `npm install --save-dev @webgpu/types`
   
 ^ Use npm install for quick installation.  
   
