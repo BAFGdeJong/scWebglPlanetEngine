@@ -4,13 +4,14 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         emptyOutDir: false,
-        minify: 'terser',
-        terserOptions: {
-            compress: {
-                drop_console: true,
-                passes: 1000,
-            },
-        },
+        minify: false,
+        // minify: 'terser',
+        // terserOptions: {
+        //     compress: {
+        //         drop_console: true,
+        //         passes: 1000,
+        //     },
+        // },
         // sourcemap: true, // Debug
         lib: {
             entry: 'src/engine.ts',

@@ -18,9 +18,11 @@ let canvas = document.querySelector("canvas") as HTMLCanvasElement;
 
 if (!canvas) {
   canvas = document.createElement("canvas");
-  canvas.width = 800;
-  canvas.height = 600;
+  canvas.width = 1200;
+  canvas.height = 1200;
   document.body.appendChild(canvas);
+  // let container = document.getElementsByClassName('thumbinner')[0];
+  // container.insertBefore(canvas, container.firstChild);
 }
 
 const context: GPUCanvasContext = canvas.getContext("webgpu") as GPUCanvasContext;
