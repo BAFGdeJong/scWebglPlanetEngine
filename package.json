@@ -7,10 +7,11 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "vite build --config vite.config.ts && terser dist/planetEngine.iife.js -o dist/planetEngine.min.js --compress --mangle",
-    "dev": "npm run check && vite build --config vite.config.dev.ts && vite --config vite.config.dev.ts"
+    "dev": "npm run check && vite --config vite.config.dev.ts"
   },
   "dependencies": {
     "terser": "^5.44.0",
-    "wgpu-matrix": "^3.4.0"
+    "wgpu-matrix": "^3.4.0",
+    "wgsl_reflect": "^1.2.3"
   }
 }

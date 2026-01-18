@@ -5,11 +5,63 @@
 // import { ShaderManager } from './shadermanager.ts';
 // import { Planet3D, BackgroundObject, Planet2D } from './objectstorage.ts';
 // import { TextureLoader } from './textureloader.ts';
-// import { ShaderMap } from './shadermap.ts';
 
-import { main } from './webgpu';
+import { WebgpuShader } from './shadermap.ts';
+import {WebGpuRenderer} from './webgpu';
+import {SphereMesh} from "./sphere.ts";
+import {Mesh} from "./mesh.ts";
+import {Entity} from "./entity.ts";
+import {Material} from "./material.ts";
+import {WebRenderer} from "./webrenderer.ts";
 
-main();
+let canvas = document.querySelector("canvas") as HTMLCanvasElement;
+
+if (!canvas) {
+  canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 600;
+  document.body.appendChild(canvas);
+}
+
+const context: GPUCanvasContext = canvas.getContext("webgpu") as GPUCanvasContext;
+
+async function start() {
+  try {
+    const renderer = new WebGpuRenderer(context, canvas);
+
+    await renderer.init();
+
+    await main(renderer);
+  } catch (err) {
+    console.error("WebGPU Failed to Start:", err);
+    // Fallback to WebGL here if needed
+  }
+}
+
+async function main(renderer: WebRenderer) {
+
+  let sphereBig = new SphereMesh(8, 0.6);
+  let sphereMedium = new SphereMesh(4, 0.4);
+  let sphereSmall = new SphereMesh(8, 0.2);
+
+
+  const shader = renderer.createShader("planet", WebgpuShader.planet);
+
+  const sphereMeshSmall = new Mesh(renderer, sphereBig.meshData);
+  const sphereMaterialSmall = new Material(shader, null);
+  const ss = new Entity(renderer, sphereMeshSmall, sphereMaterialSmall);
+
+  const sphereMeshMedium = new Mesh(renderer, sphereMedium.meshData);
+  const sphereMaterialMedium = new Material(shader, null);
+  const ss2 = new Entity(renderer, sphereMeshMedium, sphereMaterialMedium);
+
+  renderer.addEntity(1, ss2);
+  renderer.addEntity(0, ss);
+
+  renderer.run(60);
+}
+
+start().finally();
 
 // async function initGL() {
 
