@@ -4,8 +4,14 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         emptyOutDir: false,
-        minify: false, // Debug
-        sourcemap: true, // Debug
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                passes: 1000,
+            },
+        },
+        // sourcemap: true, // Debug
         lib: {
             entry: 'src/engine.ts',
             formats: ['iife'],
@@ -17,6 +23,7 @@ export default defineConfig({
                 inlineDynamicImports: true,
             },
         },
+        target: 'es2019'
     },
     // optimizeDeps: {
     //     include: ['shaders.ts'],
