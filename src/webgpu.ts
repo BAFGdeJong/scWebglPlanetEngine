@@ -129,7 +129,7 @@ export class WebGpuRenderer implements WebRenderer {
     if (!this.globalBindGroup) {
       this.globalBuffer = this.device.createBuffer({
         label: 'global',
-        size: 16,
+        size: 32,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
       });
 

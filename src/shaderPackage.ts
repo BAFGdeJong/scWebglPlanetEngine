@@ -36,7 +36,7 @@ export class ShaderPackage {
 
     this.reflection = new WgslReflect(shaderCode);
 
-    const vertexLayout = this.getVertexLayout();
+    const vertexLayout = this.getVertexLayouts();
 
     this.setupAttributes();
     this.setupUniforms();
@@ -49,7 +49,7 @@ export class ShaderPackage {
       vertex: {
         module: this.shaderModule,
         entryPoint: "vert",
-        buffers: vertexLayout ? [vertexLayout] : [],
+        buffers: vertexLayout,
       },
       fragment: {
         module: this.shaderModule,
@@ -112,37 +112,37 @@ export class ShaderPackage {
 
   }
 
-  private getVertexLayout(): GPUVertexBufferLayout | null {
+  private getVertexLayouts(): GPUVertexBufferLayout[] {
+    // 1. Find the vertex entry point (usually "vert" or "main")
     const vertexEntry = this.reflection.entry.vertex.find(e => e.name === "vert");
-    if (!vertexEntry || !vertexEntry.inputs) return null;
 
-    const attributes: GPUVertexAttribute[] = [];
-    let stride = 0;
+    if (!vertexEntry || !vertexEntry.inputs) return [];
 
-    // @ts-ignore
-    vertexEntry.inputs.sort((a, b) => a.location - b.location).forEach(input => {
+    const layouts: GPUVertexBufferLayout[] = [];
 
-      const format = this.mapTypeToFormat(input.type);
+    // 2. Iterate over inputs (Position, Normal, UV, etc.)
+    // @ts-ignore - Ignoring strict check on 'inputs' source for now
+    vertexEntry.inputs.sort((a, b) => Number(a.location) - Number(b.location)).forEach((input) => {
+
+      // Resolve the WebGPU format (e.g., "float32x3")
+      const format = this.mapTypeToFormat(input.type?.getTypeName()!);
+
+      // Resolve the byte size (e.g., 12)
       const size = this.getByteSize(format);
 
-      attributes.push(<GPUVertexAttribute>{
-        shaderLocation: input.location,
-        offset: stride,
-        format: format
+      // 3. Push a separate layout for this buffer
+      layouts.push({
+        arrayStride: size,      // Stride matches the size of this one attribute
+        stepMode: "vertex",
+        attributes: [{
+          shaderLocation: Number(input.location), // FIX: Force convert to number
+          offset: 0,            // Always 0 for separate buffers
+          format: format
+        }]
       });
-
-      stride += size;
     });
 
-    this.vertexStride = stride;
-
-    if (stride === 0) return null;
-
-    return {
-      arrayStride: stride,
-      attributes: attributes,
-      stepMode: "vertex"
-    };
+    return layouts;
   }
 
   createBindGroup(label: string, groupIndex: number, resources: Record<string, GPUBuffer | GPUTextureView | GPUSampler>) {
@@ -191,17 +191,30 @@ export class ShaderPackage {
     return a;
   }
 
-  private mapTypeToFormat(type: any): GPUVertexFormat {
-    if (type.name === 'vec3' && type.format.name === 'f32') return 'float32x3';
-    if (type.name === 'vec2' && type.format.name === 'f32') return 'float32x2';
-    if (type.name === 'vec4' && type.format.name === 'f32') return 'float32x4';
-    return 'float32';
+  private mapTypeToFormat(type: string): GPUVertexFormat {
+    const t = type.toLowerCase().trim();
+
+    if (t === "f32" || t === "float") return "float32";
+    if (t === "vec2<f32>" || t === "vec2f") return "float32x2";
+    if (t === "vec3<f32>" || t === "vec3f") return "float32x3";
+    if (t === "vec4<f32>" || t === "vec4f") return "float32x4";
+
+    if (t === "u32" || t === "uint") return "uint32";
+    if (t === "i32" || t === "int")  return "sint32";
+
+    console.warn(`Unknown vertex format: ${type}, defaulting to float32x3`);
+    return "float32x3";
   }
 
   private getByteSize(format: GPUVertexFormat): number {
-    if (format === 'float32x3') return 12;
-    if (format === 'float32x4') return 16;
-    if (format === 'float32x2') return 8;
-    return 4;
+    switch (format) {
+      case "float32":   return 4;
+      case "float32x2": return 8;
+      case "float32x3": return 12;
+      case "float32x4": return 16;
+      case "uint32":    return 4;
+      case "sint32":    return 4;
+      default: return 0;
+    }
   }
 }

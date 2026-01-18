@@ -1,12 +1,11 @@
 import {Mesh} from "./mesh.ts";
 import {Material} from "./material.ts";
-import {WebGpuRenderer} from "./webgpu.ts";
 import {mat4, vec3} from "wgpu-matrix";
 import {WebRenderer} from "./webrenderer.ts";
 
 export class Entity {
-  mesh: Mesh;         // The Shape
-  material: Material; // The Look
+  mesh: Mesh;
+  material: Material;
 
   position: Float32Array = vec3.fromValues(0, 0, 0);
   rotation: Float32Array = vec3.fromValues(0, 0, 0); // Euler angles (X, Y, Z)

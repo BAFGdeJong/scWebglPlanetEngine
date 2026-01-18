@@ -16,9 +16,9 @@ export class Mesh {
     this.vertexCount = data.positions.length / 3; // Assuming vec3
     this.indexCount = data.positions.length;
 
-    this.buffers['position'] = renderer.createBuffer('position', data.positions, GPUBufferUsage.VERTEX);
-    // this.buffers['uv'] = renderer.createBuffer('uv', data.uvs, GPUBufferUsage.VERTEX);
-    // this.buffers['normal'] = renderer.createBuffer('normal', data.normals, GPUBufferUsage.VERTEX);
-    this.buffers['indice'] = renderer.createBuffer('indice', data.indices, GPUBufferUsage.INDEX);
+    if (data.positions) this.buffers['position'] = renderer.createBuffer('position', data.positions, GPUBufferUsage.VERTEX);
+    if (data.uvs)       this.buffers['uv']       = renderer.createBuffer('uv',       data.uvs,       GPUBufferUsage.VERTEX);
+    if (data.normals)   this.buffers['normal']   = renderer.createBuffer('normal',   data.normals,   GPUBufferUsage.VERTEX);
+    if (data.indices)   this.buffers['indice']   = renderer.createBuffer('indice',   data.indices,   GPUBufferUsage.INDEX);
   }
 }

@@ -40,23 +40,16 @@ async function start() {
 
 async function main(renderer: WebRenderer) {
 
-  let sphereBig = new SphereMesh(8, 0.6);
   let sphereMedium = new SphereMesh(4, 0.4);
   let sphereSmall = new SphereMesh(8, 0.2);
 
 
   const shader = renderer.createShader("planet", WebgpuShader.planet);
 
-  const sphereMeshSmall = new Mesh(renderer, sphereBig.meshData);
-  const sphereMaterialSmall = new Material(shader, null);
-  const ss = new Entity(renderer, sphereMeshSmall, sphereMaterialSmall);
+  let sphereBig = new Entity(renderer, new Mesh(renderer, new SphereMesh(8, 0.6)), new Material(shader, null));
 
-  const sphereMeshMedium = new Mesh(renderer, sphereMedium.meshData);
-  const sphereMaterialMedium = new Material(shader, null);
-  const ss2 = new Entity(renderer, sphereMeshMedium, sphereMaterialMedium);
-
-  renderer.addEntity(1, ss2);
-  renderer.addEntity(0, ss);
+  renderer.addEntity(0, sphereBig);
+  // renderer.addEntity(0, ss);
 
   renderer.run(60);
 }

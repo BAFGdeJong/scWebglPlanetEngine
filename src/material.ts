@@ -6,6 +6,6 @@ export class Material {
 
   public constructor(shader: ShaderPackage, uniforms: any) {
     this.shader = shader;
-    this.group = shader.createBindGroup("material", 1, uniforms); // TODO label
+    this.group = shader.createBindGroup("material", 1, uniforms);
   }
 }
